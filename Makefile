@@ -1,2 +1,9 @@
+COMPILER=gcc
+SOURCES=src/main.c\
+
+DEST=main
+FLAGS=-Wall \
+			-lncurses
+
 all:
-	gcc src/main.c -o main
+	$(COMPILER) $(SOURCES) $(FLAGS) -o $(DEST)

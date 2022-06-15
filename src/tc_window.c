@@ -5,10 +5,9 @@ WINDOW *alloc_win(int h, int w, int y, int x, enum border_type type)
 {
 	WINDOW *win;
 	win = newwin(h, w, y, x);
-	if (win==NULL) {
+	if (win == NULL) {
 		error_panic(stderr, "Couldn't alloc mem for WINDOW\n");
 	}
-
 	refresh();
 	box(win, 0, 0);
 	keypad(win, TRUE); /* enable keys like arrows, backspace, home etc. (not enabled by default for window) */
@@ -37,6 +36,11 @@ WINDOW *border_window(WINDOW *w, enum border_type type)
 			break;
 	}
 	return w;
+}
+
+int write_window(WINDOW *w)
+{
+	return 0;
 }
 
 void clr_win(WINDOW *w)

@@ -122,7 +122,21 @@ int main()
 	int maxx = getmaxx(stdscr);
 	int maxy = getmaxy(stdscr);
 
+	prompt_t *name_prompt_widget = malloc(sizeof(prompt_t));
+	name_prompt_widget->s = GInitSz(5, 20, 5, 5);
+	name_prompt_widget->question = "What is your name?";
+	name_prompt_widget->w = GPromptWidget(name_prompt_widget, 10);
+	name_prompt_widget->read(name_prompt_widget);
 
+	printw("%s", name_prompt_widget->answer);
+	getch();
+
+	FreeWidget(name_prompt_widget, free_prompt);
+
+
+	shutdown();
+	//getchar();
+	exit(0);
 /* TODO calculate placement coordinates in separate variables so it looks more pretty */
 #define INPUT_WINY 3
 #define INPUT_WINX maxx-40
@@ -178,7 +192,7 @@ int main()
 	int running=1;
 	while (running) {
 		//ret=wgetnstr(input, str, MSG_SIZE);
-		mywgetnstr(input, str, MSG_SIZE);
+		tc_wgetnstr(input, str, MSG_SIZE, 1, 1);
 		if (strlen(str)>0) {
 			wprintw(chat, "\t%s: %s\n", name, str);
 			wborder(chat, '|', '|', '-', '-', '+', '+', '+', '+');

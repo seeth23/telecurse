@@ -1,6 +1,5 @@
 #include "input.h"
 
-
 static void delchar_w(WINDOW *w, int y, int x)
 {
 	int oldy=getcury(w), oldx=getcurx(w);
@@ -16,7 +15,7 @@ static void clearln(WINDOW *w, int endx)
 	}
 }
 
-int mywgetnstr(WINDOW *w, char *buf, size_t buf_len)
+int tc_wgetnstr(WINDOW *w, char *buf, size_t buf_len, int y, int x)
 {
 #define ctrl(x)           ((x) & 0x1f)
 #define BACKSPACE 263
@@ -27,14 +26,11 @@ int mywgetnstr(WINDOW *w, char *buf, size_t buf_len)
 		memset(buf, 0, buf_len);
 	}
 	int ch, count = 0;
-
+	wmove(w, y, x);
 	while (count<buf_len && (ch = wgetch(w)) != '\n') {
-		if (ch == '\n') {
-			clearln(w, count);
-		}
-		if (getcurx(w)>getbegx(w) && (ch == BACKSPACE || ch == KEY_BACKSPACE || ch == 127)) {
-			wmove(w, 1, getcurx(w)-1);
-			delchar_w(w, 1, getcurx(w));
+		if (getcurx(w)>1 && (ch == BACKSPACE || ch == KEY_BACKSPACE || ch == 127)) {
+			wmove(w, y, getcurx(w)-1);
+			delchar_w(w, y, getcurx(w));
 			buf[--count]='\0';
 			wrefresh(w);
 		} else if (ch != BACKSPACE && ch != KEY_BACKSPACE && ch != 127) {

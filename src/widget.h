@@ -5,6 +5,7 @@
 
 #include "tc_window.h"
 #include "types.h"
+#include "input.h"
 
 typedef struct WindowProp {
 	int height, width;
@@ -15,6 +16,9 @@ typedef struct PromptWidget {
 	window_t *s;
 	WINDOW *w;
 	char *question;
+	char *answer;
+	size_t ans_size;
+	void (*read)(struct PromptWidget *);
 } prompt_t;
 
 typedef struct InputWidget {
@@ -28,11 +32,12 @@ typedef struct MenuWidget {
 	const char **options;
 } menu_t;
 
-WINDOW *GPromptWidget(prompt_t *t);
+WINDOW *GPromptWidget(prompt_t *t, size_t sz);
 WINDOW *GInputWidget(input_t *t);
 WINDOW *GMenuWidget(menu_t *t);
 void FreeWidget(void *widget, enum free_type t);
 
 window_t *GInitSz(int height, int width, int y, int x);
+
 
 #endif

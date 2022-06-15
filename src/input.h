@@ -5,7 +5,7 @@
 #include <string.h>
 
 
-int mywgetnstr(WINDOW *w, char *buf, size_t buf_len);
+int tc_wgetnstr(WINDOW *w, char *buf, size_t buf_len, int y, int x);
 
 #endif
 

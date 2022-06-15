@@ -72,7 +72,7 @@ int main()
 	getmaxyx(stdscr, maxy, maxx);
 
 	/* ------------------PROMT-WIDGET--------------------- */
-	prompt_t *name_prompt_widget = GPromptWidget("Enter name", 18, 5, 20, maxy/2-5, maxx/2-20);
+	prompt_t *name_prompt_widget = GPromptWidget("Enter name", 18, 5, 20, maxy/2-5, maxx/2-20, border_type2);
 	name_prompt_widget->read(name_prompt_widget);
 	FreeWidget(name_prompt_widget, free_prompt);
 	/* ------------------MENU-WIDGET--------------------- */
@@ -83,9 +83,11 @@ int main()
 	}
 	menu_widget->s = GInitSz(2+size, 20, 2, 80);
 #endif
+
 	const char *opt[] = { "Option1", "Option2", "Option3", "Option4" };
 	size_t size = sizeof(opt) / sizeof(opt[0]);
-	menu_t *menu_widget = GMenuWidget(opt, "You have", size, 2, 20, 2, 80);
+
+	menu_t *menu_widget = GMenuWidget(opt, "You have", size, 2, 20, 2, 80, border_type3);
 	menu_widget->choose(menu_widget, handler);
 	FreeWidget(menu_widget, free_menu);
 

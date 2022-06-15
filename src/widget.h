@@ -36,16 +36,17 @@ typedef struct MenuWidget {
 } menu_t;
 
 //WINDOW *GPromptWidget(prompt_t *t, size_t sz);
-prompt_t *GPromptWidget(const char *str, size_t size, int height, int width, int starty, int startx);
+prompt_t *GPromptWidget(const char *str, size_t str_len, int height, int width, int starty, int startx, enum border_type t);
 
 //WINDOW *GMenuWidget(menu_t *t, const char **opt, const char *msg);
-menu_t *GMenuWidget(const char **opt, const char *msg, size_t size, int height, int width, int starty, int startx);
+menu_t *GMenuWidget(const char **opt, const char *msg, size_t size, int height, int width, int starty, int startx, enum border_type t);
 
 WINDOW *GInputWidget(input_t *t);
 WINDOW *GInfoWidget();
 
 void FreeWidget(void *widget, enum free_type t);
 
-window_t *GInitSz(int height, int width, int y, int x);
+//window_t *GInitSz(int height, int width, int y, int x);
+//static window_t *GInitSz(int height, int width, int y, int x);
 
 #endif

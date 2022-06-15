@@ -3,6 +3,19 @@
 
 // TODO make another .c file for 'methods'
 
+static window_t *GInitSz(int height, int width, int y, int x)
+{
+	window_t *t = malloc(sizeof(window_t));
+	if (!t) {
+		error_panic(stderr, "Could not allocate memory!");
+	}
+	t->height = height;
+	t->width = width;
+	t->starty = y;
+	t->startx = x;
+	return t;
+}
+
 static void ReadPrompt(prompt_t *t)
 {
 	tc_wgetnstr(t->w, t->answer, t->ans_size, 1, 1);
@@ -48,11 +61,12 @@ static void ChooseOption(menu_t *t, void (*handler)(const char **actions, int in
 
 prompt_t *GPromptWidget(
 		const char *str,
-		size_t size,
+		size_t str_len,
 		int height,
 		int width,
 		int starty,
-		int startx)
+		int startx,
+		enum border_type bt)
 {
 	prompt_t *t = malloc(sizeof(prompt_t));
 	if (!t) {
@@ -61,8 +75,8 @@ prompt_t *GPromptWidget(
 	t->s = GInitSz(height, width, starty, startx);
 	window_t *inf = t->s;
 
-	t->w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, border_type2);
-	t->ans_size = size;
+	t->w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, bt);
+	t->ans_size = str_len;
 	t->question = str;
 	t->read = ReadPrompt;
 
@@ -109,7 +123,8 @@ menu_t *GMenuWidget(
 		int height,
 		int width,
 		int starty,
-		int startx)
+		int startx,
+		enum border_type bt)
 {
 	menu_t *t = malloc(sizeof(menu_t));
 	if (!t) {
@@ -118,7 +133,7 @@ menu_t *GMenuWidget(
 	t->s = GInitSz(height+size, width, starty, startx);
 	window_t *inf = t->s; /* just for shortcut */
 
-	t->w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, border_type1);
+	t->w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, bt);
 	mvwprintw(t->w, 0, 1, "%s", msg);
 
 	t->options = opt;
@@ -170,18 +185,6 @@ WINDOW *GInfoWidget()
 	return NULL;
 }
 
-window_t *GInitSz(int height, int width, int y, int x)
-{
-	window_t *t = malloc(sizeof(window_t));
-	if (!t) {
-		error_panic(stderr, "Could not allocate memory!");
-	}
-	t->height = height;
-	t->width = width;
-	t->starty = y;
-	t->startx = x;
-	return t;
-}
 
 void FreeWidget(void *widget, enum free_type t)
 {

@@ -12,7 +12,8 @@ SOURCES=$(O)/main.c\
 
 DEST=tc
 FLAGS=-Wall \
-			-lncurses
+			-lncurses \
+			-g
 
 all:
 	$(COMPILER) $(SOURCES) $(FLAGS) -o $(DEST)

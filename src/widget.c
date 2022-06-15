@@ -25,6 +25,7 @@ static void RenderMenu(menu_t *t)
 {
 	const char **list = t->options;
 	size_t line = 0;
+	/* TODO Probably will crush sometime. Be carefull */
 	while (*list) {
 		if (line == t->current_item)
 			wattron(t->w, A_REVERSE);
@@ -84,7 +85,6 @@ prompt_t *GPromptWidget(
 	if (!t->answer) {
 		error_panic(stderr, "Could not alloc memory for buffer");
 	}
-
 	wprintw(t->w, "%s", t->question);
 	wrefresh(t->w);
 	inf = NULL;
@@ -119,7 +119,7 @@ WINDOW *GInputWidget(input_t *t)
 menu_t *GMenuWidget(
 		const char **opt,
 		const char *msg,
-		size_t size,
+		size_t opt_size,
 		int height,
 		int width,
 		int starty,
@@ -130,7 +130,7 @@ menu_t *GMenuWidget(
 	if (!t) {
 		error_panic(stderr, "Could not allocate memory for menu widget\n");
 	}
-	t->s = GInitSz(height+size, width, starty, startx);
+	t->s = GInitSz(height+opt_size, width, starty, startx);
 	window_t *inf = t->s; /* just for shortcut */
 
 	t->w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, bt);
@@ -139,10 +139,9 @@ menu_t *GMenuWidget(
 	t->options = opt;
 	t->choose = ChooseOption;
 	t->current_item = 0;
-	t->all_items = size;
+	t->all_items = opt_size;
 
 	size_t line = 0;
-	//const char **list = opt;
 	while (*opt) {
 		if (line == 0)
 			wattron(t->w, A_REVERSE);

@@ -45,5 +45,6 @@ int tc_wgetnstr(WINDOW *w, char *buf, size_t buf_len, int y, int x)
 		}
 		wrefresh(w);
 	}
+	buf[count] = 0;
 	return 0;
 }

@@ -10,7 +10,6 @@
 #include "input.h"
 #include "widget.h"
 
-
 void sigint_handler(int sig)
 {
 	endwin();
@@ -58,10 +57,19 @@ const char *meeting_prompt(int maxy, int maxx)
 }
 #endif
 
+void ct_cpystr(char *dest, const char *src)
+{
+	int i = 0;
+	while ((dest[i] = *src)) {
+		i++;
+		src++;
+	}
+}
+
 void handler(const char **actions, int i) {
 	endwin();
 	printf("%s WAS CHOSEN\n", actions[i]);
-	//exit(0);
+	exit(0);
 }
 
 int main()
@@ -83,16 +91,15 @@ int main()
 	}
 	menu_widget->s = GInitSz(2+size, 20, 2, 80);
 #endif
-
-	const char *opt[] = { "Option1", "Option2", "Option3", "Option4" };
+	const char *opt[] = { "Option1", "Option2", NULL };
 	size_t size = sizeof(opt) / sizeof(opt[0]);
-
-	menu_t *menu_widget = GMenuWidget(opt, "You have", size, 2, 20, 2, 80, border_type3);
+	menu_t *menu_widget = GMenuWidget(opt, "You have", size-1, 2, 20, 2, 80, border_default);
 	menu_widget->choose(menu_widget, handler);
 	FreeWidget(menu_widget, free_menu);
 
 	shutdown();
 	return 0;
+
 #if 0
 #define INPUT_WINY 3
 #define INPUT_WINX maxx-40
@@ -141,4 +148,3 @@ int main()
 	}
 #endif
 }
-

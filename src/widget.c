@@ -8,12 +8,12 @@ static void ReadPrompt(prompt_t *t)
 	tc_wgetnstr(t->w, t->answer, t->ans_size, 1, 1);
 }
 
-static void RenderMenu(menu_t *t, int index)
+static void RenderMenu(menu_t *t)
 {
 	const char **list = t->options;
 	size_t line = 0;
 	while (*list) {
-		if (line == index)
+		if (line == t->current_item)
 			wattron(t->w, A_REVERSE);
 		else
 			wattroff(t->w, A_REVERSE);
@@ -26,7 +26,7 @@ static void RenderMenu(menu_t *t, int index)
 static void ChooseOption(menu_t *t, void (*handler)(const char **actions, int index))
 {
 	int ch;
-	while ((ch = wgetch(t->w))/* && index >= 0*/) {
+	while ((ch = wgetch(t->w)) /*&& index >= 0*/) {
 		switch (ch) {
 			case KEY_DOWN:
 				if (t->current_item < t->all_items-1)
@@ -39,12 +39,46 @@ static void ChooseOption(menu_t *t, void (*handler)(const char **actions, int in
 			case KB_ENTER:
 				handler(t->options, t->current_item);
 				break;
+			case KEY_PPAGE:
+				return;
 		}
-		RenderMenu(t, t->current_item);
+		RenderMenu(t);
 	}
 }
 
-WINDOW *GPromptWidget(prompt_t *t, size_t size)
+prompt_t *GPromptWidget(
+		const char *str,
+		size_t size,
+		int height,
+		int width,
+		int starty,
+		int startx)
+{
+	prompt_t *t = malloc(sizeof(prompt_t));
+	if (!t) {
+		error_panic(stderr, "Could not allocate memory for prompt widget\n");
+	}
+	t->s = GInitSz(height, width, starty, startx);
+	window_t *inf = t->s;
+
+	t->w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, border_type2);
+	t->ans_size = size;
+	t->question = str;
+	t->read = ReadPrompt;
+
+	t->answer = malloc(sizeof(char)*t->ans_size);
+	if (!t->answer) {
+		error_panic(stderr, "Could not alloc memory for buffer");
+	}
+
+	wprintw(t->w, "%s", t->question);
+	wrefresh(t->w);
+	inf = NULL;
+	return t;
+}
+
+#if 0
+WINDOW *GPromptWidget(prompt_t *t, const char *str, size_t size)
 {
 	window_t *inf = t->s;
 	WINDOW *w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, border_type2);
@@ -59,12 +93,53 @@ WINDOW *GPromptWidget(prompt_t *t, size_t size)
 	t->read = ReadPrompt;
 	return w;
 }
+#endif
 
 WINDOW *GInputWidget(input_t *t)
 {
-	return NULL;
+	window_t *inf = t->s;
+	WINDOW *w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, border_type1);
+	return w;
 }
 
+menu_t *GMenuWidget(
+		const char **opt,
+		const char *msg,
+		size_t size,
+		int height,
+		int width,
+		int starty,
+		int startx)
+{
+	menu_t *t = malloc(sizeof(menu_t));
+	if (!t) {
+		error_panic(stderr, "Could not allocate memory for menu widget\n");
+	}
+	t->s = GInitSz(height+size, width, starty, startx);
+	window_t *inf = t->s; /* just for shortcut */
+
+	t->w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, border_type1);
+	mvwprintw(t->w, 0, 1, "%s", msg);
+
+	t->options = opt;
+	t->choose = ChooseOption;
+	t->current_item = 0;
+	t->all_items = size;
+
+	size_t line = 0;
+	//const char **list = opt;
+	while (*opt) {
+		if (line == 0)
+			wattron(t->w, A_REVERSE);
+		else
+			wattroff(t->w, A_REVERSE);
+		mvwprintw(t->w, 1+line++, 6, "%s", *opt++);
+		wrefresh(t->w);
+	}
+	return t;
+}
+
+#if 0
 WINDOW *GMenuWidget(menu_t *t, const char **opt, const char *msg)
 {
 	window_t *inf = t->s;
@@ -88,6 +163,7 @@ WINDOW *GMenuWidget(menu_t *t, const char **opt, const char *msg)
 	}
 	return w;
 }
+#endif
 
 WINDOW *GInfoWidget()
 {
@@ -117,6 +193,7 @@ void FreeWidget(void *widget, enum free_type t)
 			if (i->w) {
 				clr_win(i->w);
 			}
+			free(widget);
 			break;
 		}
 		case free_menu: {
@@ -126,7 +203,8 @@ void FreeWidget(void *widget, enum free_type t)
 			if (i->w) {
 				clr_win(i->w);
 			}
-			break;
+			free(widget);
+			return;
 		}
 		case free_prompt: {
 			prompt_t *i = (prompt_t *)widget;
@@ -135,10 +213,9 @@ void FreeWidget(void *widget, enum free_type t)
 			if (i->w) {
 				clr_win(i->w);
 			}
+			free(widget);
 			break;
 		}
-		default:
-			break;
 	}
-	free(widget);
+	//free(widget);
 }

@@ -10,11 +10,6 @@
 #include "input.h"
 #include "widget.h"
 
-void handler(const char **actions, int i) {
-	endwin();
-	printf("%s WAS CHOSEN\n", actions[i]);
-	exit(0);
-}
 
 void sigint_handler(int sig)
 {
@@ -32,14 +27,6 @@ void sigint_handler(int sig)
 /* CLIENT MUST NOT UPDATE CHAT: SERVER WILL SEND EVERY CLIENT A MESSAGE TO RENDER. THIS IS JUST EXAMPLE FOR GUI
  * TODO separate server program to handle client input and data */
 
-int current_users;
-
-typedef struct term_info termi_t;
-
-void filter_input()
-{
-}
-
 void init()
 {
 	initscr();
@@ -52,8 +39,7 @@ void shutdown()
 	endwin();
 }
 
-#define NAME_SIZE 50
-
+#if 0
 const char *meeting_prompt(int maxy, int maxx)
 {
 	char *name = malloc(NAME_SIZE);
@@ -70,73 +56,23 @@ const char *meeting_prompt(int maxy, int maxx)
 	clr_win(meeting);
 	return name;
 }
-
-#define MAX_USERS 32
-
-int fill_user_table(const char *users[MAX_USERS], const char *new_name)
-{
-	int i;
-	for (i=0; i<MAX_USERS; i++) {
-		if (!users[i]) {
-			users[i]=new_name;
-			break;
-		}
-	}
-	current_users++;
-	return i;
-}
-
-void fill_user_win(WINDOW *w, const char *users[MAX_USERS])
-{
-	for (int i=0; i<current_users; ++i) {
-		if (users[i])
-			wprintw(w, "%s", users[i]);
-	}
-}
-
-void main_loop()
-{
-}
-
-#if 0
-int kbhit(WINDOW *w, int *ch)
-{
-	int r;
-	nodelay(w, TRUE);
-	noecho();
-	*ch = wgetch(w);
-	if(*ch == ERR)
-		r = FALSE;
-	else {
-		r = TRUE;
-	 	ungetch(*ch);
-	}
-	echo();
-	nodelay(w, FALSE);
-	return(r);
-}
 #endif
 
+void handler(const char **actions, int i) {
+	endwin();
+	printf("%s WAS CHOSEN\n", actions[i]);
+	//exit(0);
+}
 
 int main()
 {
 	init();
 	signal(SIGINT, sigint_handler);
-	const char *users_table[32];
-	memset(&users_table, 0, sizeof(users_table));
-	/*int maxx = getmaxx(stdscr);
-	int maxy = getmaxy(stdscr);*/
 	int maxx, maxy;
 	getmaxyx(stdscr, maxy, maxx);
 
 	/* ------------------PROMT-WIDGET--------------------- */
-	prompt_t *name_prompt_widget = malloc(sizeof(prompt_t));
-	if (!name_prompt_widget) {
-		error_panic(stderr, "Could not allocate memory for prompt widget\n");
-	}
-	name_prompt_widget->s = GInitSz(5, 20, maxy/2-5, maxx/2-20);
-	name_prompt_widget->question = "Enter name";
-	name_prompt_widget->w = GPromptWidget(name_prompt_widget, 18);
+	prompt_t *name_prompt_widget = GPromptWidget("Enter name", 18, 5, 20, maxy/2-5, maxx/2-20);
 	name_prompt_widget->read(name_prompt_widget);
 	FreeWidget(name_prompt_widget, free_prompt);
 	/* ------------------MENU-WIDGET--------------------- */
@@ -145,15 +81,13 @@ int main()
 	if (!menu_widget) {
 		error_panic(stderr, "Could not allocate memory for menu widget\n");
 	}
-	const char *opt[] = { "Option1", "Option2" };
-	int size = sizeof(opt) / sizeof(opt[0]);
 	menu_widget->s = GInitSz(2+size, 20, 2, 80);
-	menu_widget->w = GMenuWidget(menu_widget, opt, "You have");
+#endif
+	const char *opt[] = { "Option1", "Option2", "Option3", "Option4" };
+	size_t size = sizeof(opt) / sizeof(opt[0]);
+	menu_t *menu_widget = GMenuWidget(opt, "You have", size, 2, 20, 2, 80);
 	menu_widget->choose(menu_widget, handler);
 	FreeWidget(menu_widget, free_menu);
-#endif
-	/* */
-
 
 	shutdown();
 	return 0;

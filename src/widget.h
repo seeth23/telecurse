@@ -15,7 +15,7 @@ typedef struct WindowProp {
 typedef struct PromptWidget {
 	window_t *s;
 	WINDOW *w;
-	char *question;
+	const char *question;
 	char *answer;
 	size_t ans_size;
 	void (*read)(struct PromptWidget *);
@@ -35,9 +35,13 @@ typedef struct MenuWidget {
 	void (*choose)(struct MenuWidget *, void (*handler)(const char **actions, int index));
 } menu_t;
 
-WINDOW *GPromptWidget(prompt_t *t, size_t sz);
+//WINDOW *GPromptWidget(prompt_t *t, size_t sz);
+prompt_t *GPromptWidget(const char *str, size_t size, int height, int width, int starty, int startx);
+
+//WINDOW *GMenuWidget(menu_t *t, const char **opt, const char *msg);
+menu_t *GMenuWidget(const char **opt, const char *msg, size_t size, int height, int width, int starty, int startx);
+
 WINDOW *GInputWidget(input_t *t);
-WINDOW *GMenuWidget(menu_t *t, const char **opt, const char *msg);
 WINDOW *GInfoWidget();
 
 void FreeWidget(void *widget, enum free_type t);

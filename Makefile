@@ -7,7 +7,6 @@ SOURCES=$(O)/main.c\
 				$(O)/pc_error.c\
 				$(O)/tc_window.c\
 				$(O)/parse_conf.c\
-				$(O)/types.c\
 
 DEST=tc
 FLAGS=-Wall \

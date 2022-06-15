@@ -1,5 +1,5 @@
-#ifndef __TC_WINDOW__
-#define __TC_WINDOW__
+#ifndef __TC_WINDOW__H
+#define __TC_WINDOW__H
 
 #include <ncurses.h>
 #include "pc_error.h"

@@ -21,4 +21,10 @@ struct user_info {
 
 };
 
+enum free_type {
+	free_prompt,
+	free_menu,
+	free_input,
+};
+
 #endif

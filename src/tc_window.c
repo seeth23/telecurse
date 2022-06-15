@@ -11,7 +11,7 @@ WINDOW *alloc_win(int h, int w, int y, int x, enum border_type type)
 	refresh();
 	box(win, 0, 0);
 	keypad(win, TRUE); /* enable keys like arrows, backspace, home etc. (not enabled by default for window) */
-	wmove(win, 1, 1); /* init cursor at the start of the box */
+	wmove(win, 0, 1); /* init cursor at the start of the box */
 	wrefresh(win);
 	return win;
 }

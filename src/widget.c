@@ -1,10 +1,11 @@
 #include "widget.h"
+#include "keymap.h"
 
 // TODO make another .c file for 'methods'
 
 static void ReadPrompt(prompt_t *t)
 {
-	tc_wgetnstr(t->w, t->answer, t->ans_size, 2, 1);
+	tc_wgetnstr(t->w, t->answer, t->ans_size, 1, 1);
 }
 
 static void RenderMenu(menu_t *t, int index)
@@ -16,31 +17,30 @@ static void RenderMenu(menu_t *t, int index)
 			wattron(t->w, A_REVERSE);
 		else
 			wattroff(t->w, A_REVERSE);
-		mvwprintw(t->w, line++ + 1, 6, "%s", *list++);
+		mvwprintw(t->w, line++ + 1, 6, "%s", *list);
+		list++;
 		wrefresh(t->w);
 	}
 }
-#define KB_ENTER 10
-static void ChooseOption(menu_t *t, void (*handler)(int index))
+
+static void ChooseOption(menu_t *t, void (*handler)(const char **actions, int index))
 {
-	const char **list = t->options;
-	size_t index = 0;
 	int ch;
-	while ((ch = wgetch(t->w)) && index >= 0) {
+	while ((ch = wgetch(t->w))/* && index >= 0*/) {
 		switch (ch) {
 			case KEY_DOWN:
-				if (index < t->all_items-1)
-					index++;
+				if (t->current_item < t->all_items-1)
+					t->current_item++;
 				break;
 			case KEY_UP:
-				if (index > 0)
-					index--;
+				if (t->current_item > 0)
+					t->current_item--;
 				break;
 			case KB_ENTER:
-				handler(index);
+				handler(t->options, t->current_item);
 				break;
 		}
-		RenderMenu(t, index);
+		RenderMenu(t, t->current_item);
 	}
 }
 
@@ -65,30 +65,32 @@ WINDOW *GInputWidget(input_t *t)
 	return NULL;
 }
 
-WINDOW *GMenuWidget(menu_t *t, const char **opt)
+WINDOW *GMenuWidget(menu_t *t, const char **opt, const char *msg)
 {
 	window_t *inf = t->s;
-	WINDOW *w = alloc_win(inf->height, inf->width, inf->starty, inf->starty, border_type1);
+	WINDOW *w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, border_type1);
+	mvwprintw(w, 0, 1, "%s", msg);
 	t->options = opt;
 	t->choose = ChooseOption;
 	t->current_item = 0;
 	t->all_items = 0;
 	size_t line = 0;
-	while (*opt) {
+	const char **list = opt;
+	while (*list) {
 		if (line == 0)
 			wattron(w, A_REVERSE);
 		else
 			wattroff(w, A_REVERSE);
-		mvwprintw(w, line++ + 1, 6, "%s", *opt++);
 		t->all_items++;
+		mvwprintw(w, line++ + 1, 6, "%s", *list);
+		list++;
+		wrefresh(w);
 	}
-	wrefresh(w);
 	return w;
 }
 
 WINDOW *GInfoWidget()
 {
-
 	return NULL;
 }
 
@@ -140,4 +142,3 @@ void FreeWidget(void *widget, enum free_type t)
 	}
 	free(widget);
 }
-

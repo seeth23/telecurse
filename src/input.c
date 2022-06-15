@@ -1,5 +1,7 @@
 #include "input.h"
 
+//#include <regex.h>
+
 static void delchar_w(WINDOW *w, int y, int x)
 {
 	int oldy=getcury(w), oldx=getcurx(w);
@@ -8,16 +10,9 @@ static void delchar_w(WINDOW *w, int y, int x)
 	wmove(w, oldy, oldx);
 }
 
-/*static void clearln(WINDOW *w, int endx)
-{
-	for (int i=0; i<endx; i++) {
-		waddch(w, ' ');
-	}
-}*/
-
 int tc_wgetnstr(WINDOW *w, char *buf, size_t buf_len, int y, int x)
 {
-#define ctrl(x)           ((x) & 0x1f)
+//#define ctrl(x)           ((x) & 0x1f)
 #define BACKSPACE 263
 	noecho();
 	if (!buf) {
@@ -25,19 +20,30 @@ int tc_wgetnstr(WINDOW *w, char *buf, size_t buf_len, int y, int x)
 	} else {
 		memset(buf, 0, buf_len);
 	}
+	int cury, curx;
 	int ch, count = 0;
 	wmove(w, y, x);
-	while (count<buf_len && (ch = wgetch(w)) != '\n') {
-		if (getcurx(w)>1 && (ch == BACKSPACE || ch == KEY_BACKSPACE || ch == 127)) {
-			wmove(w, y, getcurx(w)-1);
-			delchar_w(w, y, getcurx(w));
-			buf[--count]='\0';
-			wrefresh(w);
+	while (count>=0 && (ch = wgetch(w)) != '\n') {
+		if (ch < 48) // disable 'unreadable' characters
+			continue;
+		getyx(w, cury, curx);
+		if (curx > 1 && (ch == BACKSPACE || ch == KEY_BACKSPACE || ch == 127)) { /* delete */
+			wmove(w, y, curx-1);
+			delchar_w(w, y, curx-1);
+			if (count>0)
+				buf[--count]='\0';
+			else
+				error_panic(stderr, "Index out of array: 1\n");
 		} else if (ch != BACKSPACE && ch != KEY_BACKSPACE && ch != 127) {
-			buf[count++]=(char)ch;
-			waddch(w, ch);
-			wrefresh(w);
+			if (count == buf_len)
+				continue;
+			if (count<buf_len)
+				buf[count++]=ch;
+			else
+				error_panic(stderr, "Index out of array: 2\n");
+			waddch(w, buf[count-1]);
 		}
+		wrefresh(w);
 	}
 	return 0;
 }

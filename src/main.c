@@ -10,11 +10,15 @@
 #include "input.h"
 #include "widget.h"
 
+void handler(const char **actions, int i) {
+	endwin();
+	printf("%s WAS CHOSEN\n", actions[i]);
+	exit(0);
+}
+
 void sigint_handler(int sig)
 {
-	// TODO POP UP MENU WIDGET WITH OK AND CANCEL OPTIONS
 	endwin();
-
 	exit(0);
 }
 
@@ -25,8 +29,8 @@ void sigint_handler(int sig)
 /* TODO make struct for current session with sizes, and draw
  * windows with its help */
 /* TODO make template functions like: "prompt function" with question parameter, common window with data to display, input window, menu window with option list */
-
-/* Bones: */
+/* CLIENT MUST NOT UPDATE CHAT: SERVER WILL SEND EVERY CLIENT A MESSAGE TO RENDER. THIS IS JUST EXAMPLE FOR GUI
+ * TODO separate server program to handle client input and data */
 
 int current_users;
 
@@ -41,8 +45,6 @@ void init()
 	initscr();
 	keypad(stdscr, TRUE);
 	cbreak();
-	//start_color();
-	//border('|', '|', '-', '-', '+', '+', '+', '+');
 }
 
 void shutdown()
@@ -57,9 +59,9 @@ const char *meeting_prompt(int maxy, int maxx)
 	char *name = malloc(NAME_SIZE);
 	WINDOW *meeting = alloc_win(10, 30, maxy/2-(10/2), maxx/2-15, border_type1);
 	wrefresh(meeting);
-	wprintw(meeting, "What is your name?\n");
+	wprintw(meeting, "Enter name:\n");
 	wmove(meeting, 2, 1);
-	while (wgetnstr(meeting, name, NAME_SIZE)==0&&strcmp(name, "")==0) {
+	while (wgetnstr(meeting, name, NAME_SIZE)==0 && strcmp(name, "")==0) {
 		if (strcmp(name, "")==0) {
 			mvwprintw(meeting, 1, 1, "Name cannot be empty!");
 			wmove(meeting, 2, 1);
@@ -96,6 +98,7 @@ void main_loop()
 {
 }
 
+#if 0
 int kbhit(WINDOW *w, int *ch)
 {
 	int r;
@@ -112,51 +115,49 @@ int kbhit(WINDOW *w, int *ch)
 	nodelay(w, FALSE);
 	return(r);
 }
+#endif
 
-void handler(int i) {
-	printw("%d WAS CHOSEN", i);
-	endwin();
-	exit(0);
-}
 
 int main()
 {
 	init();
 	signal(SIGINT, sigint_handler);
-
 	const char *users_table[32];
 	memset(&users_table, 0, sizeof(users_table));
-
-	int maxx = getmaxx(stdscr);
-	int maxy = getmaxy(stdscr);
+	/*int maxx = getmaxx(stdscr);
+	int maxy = getmaxy(stdscr);*/
+	int maxx, maxy;
+	getmaxyx(stdscr, maxy, maxx);
 
 	/* ------------------PROMT-WIDGET--------------------- */
 	prompt_t *name_prompt_widget = malloc(sizeof(prompt_t));
 	if (!name_prompt_widget) {
 		error_panic(stderr, "Could not allocate memory for prompt widget\n");
 	}
-	name_prompt_widget->s = GInitSz(5, 20, maxy/2, maxx/2-10);
-	name_prompt_widget->question = "What is your name?";
+	name_prompt_widget->s = GInitSz(5, 20, maxy/2-5, maxx/2-20);
+	name_prompt_widget->question = "Enter name";
 	name_prompt_widget->w = GPromptWidget(name_prompt_widget, 18);
 	name_prompt_widget->read(name_prompt_widget);
-	printw("%s", name_prompt_widget->answer);
 	FreeWidget(name_prompt_widget, free_prompt);
 	/* ------------------MENU-WIDGET--------------------- */
+#if 0
 	menu_t *menu_widget = malloc(sizeof(menu_t));
 	if (!menu_widget) {
 		error_panic(stderr, "Could not allocate memory for menu widget\n");
 	}
-	menu_widget->s = GInitSz(8, 20, 5, 5);
-	const char *opt[] = {"Option1", "Option2", "Option3", "Option4"};
-	menu_widget->w = GMenuWidget(menu_widget, opt);
+	const char *opt[] = { "Option1", "Option2" };
+	int size = sizeof(opt) / sizeof(opt[0]);
+	menu_widget->s = GInitSz(2+size, 20, 2, 80);
+	menu_widget->w = GMenuWidget(menu_widget, opt, "You have");
 	menu_widget->choose(menu_widget, handler);
-
-	getch();
 	FreeWidget(menu_widget, free_menu);
-	shutdown();
-	exit(0);
-/* TODO calculate placement coordinates in separate variables so it looks more pretty */
+#endif
+	/* */
 
+
+	shutdown();
+	return 0;
+#if 0
 #define INPUT_WINY 3
 #define INPUT_WINX maxx-40
 #define CHAT_WINY 10
@@ -167,18 +168,6 @@ int main()
 	refresh();
 	const char *name = meeting_prompt(maxy, maxx);
 	fill_user_table(users_table, name);
-
-#if 0
-	endwin();
-	printf("index: %d\n", index);
-	printf("all users: %d\n", current_users);
-	printf("[index]: %s\n", users_table[index]);
-	for (int j=0; j<current_users; j++) {
-		free((char*)users_table[j]);
-		users_table[j]=NULL;
-	}
-	exit(0);
-#endif
 
 #define INPUT_WIN INPUT_WINY, INPUT_WINX, getbegy(chat)+getmaxy(chat), 1, border_default
 #define CHAT_WIN CHAT_WINY, CHAT_WINX, 2, 1, border_type1
@@ -197,42 +186,23 @@ int main()
 #define MSG_SIZE 192
 
 	char str[MSG_SIZE];
-	/* CLIENT MUST NOT UPDATE CHAT: SERVER WILL SEND EVERY CLIENT A MESSAGE TO RENDER. THIS IS JUST EXAMPLE FOR GUI 
-	 * TODO separate server program to handle client input and data */
-
-	//while ((ret = wgetnstr(input, str, MSG_SIZE) == 0) && (strcmp(str, "STOP")!=0)) {
-	//	wprintw(chat, "\t%s: %s\n", name, str);
-	//	wborder(chat, '|', '|', '-', '-', '+', '+', '+', '+');
-	//	wrefresh(chat);
-	//	delwin(input);
-	//	input = alloc_win(INPUT_WIN);
-	//}
-
 	int running=1;
 	while (running) {
-		//ret=wgetnstr(input, str, MSG_SIZE);
 		tc_wgetnstr(input, str, MSG_SIZE, 1, 1);
 		if (strlen(str)>0) {
 			wprintw(chat, "\t%s: %s\n", name, str);
 			wborder(chat, '|', '|', '-', '-', '+', '+', '+', '+');
 			wrefresh(chat);
-
 			clr_win(input);
-
 			input = alloc_win(INPUT_WIN);
 		}
-		//}
 	}
-
 	delwin(chat);
 	delwin(input);
-
 	for (int j=0; j<current_users; j++) {
 		free((char*)users_table[j]);
 		users_table[j]=NULL;
 	}
-
-	shutdown();
-	return 0;
+#endif
 }
 

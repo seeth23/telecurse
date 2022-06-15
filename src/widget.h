@@ -29,15 +29,19 @@ typedef struct InputWidget {
 typedef struct MenuWidget {
 	window_t *s;
 	WINDOW *w;
+	size_t current_item;
+	size_t all_items;
 	const char **options;
+	void (*choose)(struct MenuWidget *, void (*handler)(int index));
 } menu_t;
 
 WINDOW *GPromptWidget(prompt_t *t, size_t sz);
 WINDOW *GInputWidget(input_t *t);
-WINDOW *GMenuWidget(menu_t *t);
+WINDOW *GMenuWidget(menu_t *t, const char **opt);
+WINDOW *GInfoWidget();
+
 void FreeWidget(void *widget, enum free_type t);
 
 window_t *GInitSz(int height, int width, int y, int x);
-
 
 #endif

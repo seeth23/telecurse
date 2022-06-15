@@ -8,12 +8,12 @@ static void delchar_w(WINDOW *w, int y, int x)
 	wmove(w, oldy, oldx);
 }
 
-static void clearln(WINDOW *w, int endx)
+/*static void clearln(WINDOW *w, int endx)
 {
 	for (int i=0; i<endx; i++) {
 		waddch(w, ' ');
 	}
-}
+}*/
 
 int tc_wgetnstr(WINDOW *w, char *buf, size_t buf_len, int y, int x)
 {

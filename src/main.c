@@ -41,6 +41,7 @@ void init()
 	initscr();
 	keypad(stdscr, TRUE);
 	cbreak();
+	//start_color();
 	//border('|', '|', '-', '-', '+', '+', '+', '+');
 }
 
@@ -112,32 +113,50 @@ int kbhit(WINDOW *w, int *ch)
 	return(r);
 }
 
+void handler(int i) {
+	printw("%d WAS CHOSEN", i);
+	endwin();
+	exit(0);
+}
+
 int main()
 {
 	init();
 	signal(SIGINT, sigint_handler);
+
 	const char *users_table[32];
 	memset(&users_table, 0, sizeof(users_table));
 
 	int maxx = getmaxx(stdscr);
 	int maxy = getmaxy(stdscr);
 
+	/* ------------------PROMT-WIDGET--------------------- */
 	prompt_t *name_prompt_widget = malloc(sizeof(prompt_t));
-	name_prompt_widget->s = GInitSz(5, 20, 5, 5);
+	if (!name_prompt_widget) {
+		error_panic(stderr, "Could not allocate memory for prompt widget\n");
+	}
+	name_prompt_widget->s = GInitSz(5, 20, maxy/2, maxx/2-10);
 	name_prompt_widget->question = "What is your name?";
-	name_prompt_widget->w = GPromptWidget(name_prompt_widget, 10);
+	name_prompt_widget->w = GPromptWidget(name_prompt_widget, 18);
 	name_prompt_widget->read(name_prompt_widget);
-
 	printw("%s", name_prompt_widget->answer);
-	getch();
-
 	FreeWidget(name_prompt_widget, free_prompt);
+	/* ------------------MENU-WIDGET--------------------- */
+	menu_t *menu_widget = malloc(sizeof(menu_t));
+	if (!menu_widget) {
+		error_panic(stderr, "Could not allocate memory for menu widget\n");
+	}
+	menu_widget->s = GInitSz(8, 20, 5, 5);
+	const char *opt[] = {"Option1", "Option2", "Option3", "Option4"};
+	menu_widget->w = GMenuWidget(menu_widget, opt);
+	menu_widget->choose(menu_widget, handler);
 
-
+	getch();
+	FreeWidget(menu_widget, free_menu);
 	shutdown();
-	//getchar();
 	exit(0);
 /* TODO calculate placement coordinates in separate variables so it looks more pretty */
+
 #define INPUT_WINY 3
 #define INPUT_WINX maxx-40
 #define CHAT_WINY 10

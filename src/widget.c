@@ -16,9 +16,14 @@ static window_t *GInitSz(int height, int width, int y, int x)
 	return t;
 }
 
+void foo(int ch) {}
+
 static void ReadPrompt(prompt_t *t)
 {
-	tc_wgetnstr(t->w, t->answer, t->ans_size, 1, 1);
+	//tc_wgetnstr(t->w, t->answer, t->ans_size, 1, 1);
+	winput_h *winput = input_init(t->w, t->ans_size, 1, 1);
+	t->answer = tc_wreadstr(winput, foo);
+	free_winput(winput);
 }
 
 static void RenderMenu(menu_t *t)

@@ -1,6 +1,6 @@
 #include "input.h"
 
-winput_h *input_init(WINDOW *win, size_t len, int y, int x)
+winput_h *input_init(WINDOW *win, size_t len, int starty, int startx)
 {
 	if (len <= 0)
 		error_panic(stderr, "len cannot be <= 0 for winput_h!\n");
@@ -13,9 +13,19 @@ winput_h *input_init(WINDOW *win, size_t len, int y, int x)
 	i->str = malloc(sizeof(char)*i->str_len);
 	if (!i->str)
 		error_panic(stderr, "Could not allocate memory for winput_h->str!\n");
-	i->cury = y;
-	i->curx = x;
+	i->starty = starty;
+	i->startx = startx;
+	if (i->cury < 0 || i->curx < 0)
+		error_panic(stderr, "winput->starty or winput_h->startx cannot be <= 0 for winput_h\n");
+	i->cury = i->starty;
+	i->curx = i->startx;
 	return i;
+}
+
+/* TODO free malloced stuffs here */
+void free_winput(winput_h *t)
+{
+
 }
 
 static void delchar_w(WINDOW *w, int y, int x)
@@ -66,44 +76,46 @@ void tc_wgetnstr(WINDOW *w, char *buf, size_t buf_len, int y, int x)
 }
 
 /* -------------------------------------- */
+/* TODO MAYBE change 1/0 to TRUE/FALSE for better documentation */
 
 /* TODO Check if ch is ascii or printable return 1 either 0 */
 static int tc_isascii(int ch)
 {
-	return 0;
+	return 1;
 }
 
 static void tc_putch(winput_h *t)
 {
-	waddch(t->w, t->ch);
-	t->current_pos++;
+	t->curx++;
+	t->str[t->current_pos++] = t->ch;
+	waddch(t->w, t->str[t->current_pos-1]);
 }
 
 static void tc_delch(winput_h *t)
 {
-	wmove(t->w, t->cury, t->curx-1);
-	waddch(t->w, ' ');
-	wmove(t->w, t->cury, t->curx);
-	t->current_pos--;
+	if (t->current_pos > 0) {
+		wmove(t->w, t->cury, --t->curx);
+		waddch(t->w, ' ');
+		wmove(t->w, t->cury, t->curx);
+		t->str[--t->current_pos] = '\0';
+	}
 }
 
 
 /* TODO Check if ch is delete key return 1 either 0 */
 static int tc_isdelete(int ch)
 {
-	return 0;
+	return (ch == KB_BACKSPACE || ch == KEY_BACKSPACE || ch == 127) ? 1 : 0;
 }
 
 static int tc_buf_overflow(winput_h *t)
 {
-	if (t->current_pos >= t->str_len)
-		return 0;
-	return 1;
+	return t->current_pos >= t->str_len ? 1 : 0;
 }
 
 /* void (*filter)(int ch) callback checks if ch is f1-f12 key returns nothing
  * because it will handle if e.g. f5 for quit is pressed so no need to return */
-void tc_wreadstr(winput_h *t, void (*filter)(int ch))
+char *tc_wreadstr(winput_h *t, void (*filter)(int ch))
 {
 	int isascii;
 	int isdelete;
@@ -111,18 +123,23 @@ void tc_wreadstr(winput_h *t, void (*filter)(int ch))
 		error_panic(stderr, "winput_h can not be (null)\n");
 	}
 	noecho();
+	wmove(t->w, t->cury, t->curx);
+
 	while ((t->ch = wgetch(t->w)) != '\n') {
-		filter(t->ch);
+		filter(t->ch); /* check for *special* kb_keys */
 		isascii = tc_isascii(t->ch);
 		isdelete = tc_isdelete(t->ch);
-		if (isdelete)
+		if (isdelete) {
 			tc_delch(t);
+			continue;
+		}
 		if (isascii) {
 			if (tc_buf_overflow(t))
 				continue;
 			tc_putch(t);
-		}
-		else
+		} else /* if !isascii then continue */
 			continue;
 	}
+	t->str[t->current_pos] = '\0';
+	return t->str;
 }

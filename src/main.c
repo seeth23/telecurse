@@ -42,12 +42,13 @@ int main()
 	signal(SIGINT, sigint_handler);
 	/*int maxx, maxy;
 	getmaxyx(stdscr, maxy, maxx);*/
-
+	char name[30];
 	/* --------------Examples using widgets--------------- */
 	/* ------------------PROMT-WIDGET--------------------- */
 	prompt_t *name_prompt_widget = GPromptWidget("Enter name", 18, 5, 20, 1, 1, border_type2);
 	name_prompt_widget->read(name_prompt_widget);
 	/* After reading you can extract answer by writing widget->answer and save somewhere else it with strcpy */
+	strcpy(name, name_prompt_widget->answer);
 	FreeWidget(name_prompt_widget, free_prompt);
 	/* ------------------MENU-WIDGET---------------------- */
 	/* Option list must end with NULL in case of internal implementation, either will segfault happen */
@@ -65,6 +66,7 @@ int main()
 
 	shutdown();
 	printf("Exited handler sucessfully!\n");
+	printf("name: %s\n:", name);
 	printf("size: %ld\n", size);
 	return 0;
 	}

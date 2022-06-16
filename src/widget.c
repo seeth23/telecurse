@@ -7,7 +7,7 @@ static window_t *GInitSz(int height, int width, int y, int x)
 {
 	window_t *t = malloc(sizeof(window_t));
 	if (!t) {
-		error_panic(stderr, "Could not allocate memory for window_t!");
+		error_panic(stderr, "Could not allocate memory for window_t!\n");
 	}
 	t->height = height;
 	t->width = width;
@@ -85,7 +85,7 @@ prompt_t *GPromptWidget(
 
 	t->answer = malloc(sizeof(char)*t->ans_size);
 	if (!t->answer) {
-		error_panic(stderr, "Could not alloc memory for buffer");
+		error_panic(stderr, "Could not alloc memory for buffer\n");
 	}
 	wprintw(t->w, "%s", t->question);
 	wrefresh(t->w);
@@ -202,7 +202,6 @@ void FreeWidget(void *widget, enum free_type t)
 			if (i->w) {
 				clr_win(i->w);
 			}
-			free(widget);
 			break;
 		}
 		case free_menu: {
@@ -212,7 +211,6 @@ void FreeWidget(void *widget, enum free_type t)
 			if (i->w) {
 				clr_win(i->w);
 			}
-			free(widget);
 			return;
 		}
 		case free_prompt: {
@@ -222,9 +220,10 @@ void FreeWidget(void *widget, enum free_type t)
 			if (i->w) {
 				clr_win(i->w);
 			}
-			free(widget);
+			if (i->answer)
+				free(i->answer);
 			break;
 		}
 	}
-	//free(widget);
+	free(widget);
 }

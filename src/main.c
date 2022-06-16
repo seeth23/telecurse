@@ -9,6 +9,10 @@
 #include "input.h"
 #include "widget.h"
 
+#define BASE_MENU_HEIGHT 2
+
+#define OPTIONS_SIZE(opts) (sizeof(opts)/sizeof(opt[0]))
+
 void sigint_handler(int sig)
 {
 	endwin();
@@ -27,12 +31,8 @@ void shutdown()
 	endwin();
 }
 
-#define BASE_MENU_HEIGHT 2
-
-#define OPTIONS_SIZE(opts) (sizeof(opts)/sizeof(opt[0]))
-
 void handler(const char **actions, int i) {
-	endwin();
+	shutdown();
 	printf("%s WAS CHOSEN. %d option\n", actions[i], i+1);
 }
 
@@ -53,6 +53,7 @@ int main()
 	/* Option list must end with NULL in case of internal implementation, either will segfault happen */
 	/* And the size of these option list must be size-1, again in case of internal implementation: just to
 	 * not print unnecessary line */
+
 	const char *opt[] = { "Option1", "Option2", "Option3", "Option4", NULL };
 	size_t size = OPTIONS_SIZE(opt);
 	menu_t *menu_widget = GMenuWidget(opt, "Options are", size-1, BASE_MENU_HEIGHT, 20, 1, 1, border_default);
@@ -66,4 +67,4 @@ int main()
 	printf("Exited handler sucessfully!\n");
 	printf("size: %ld\n", size);
 	return 0;
-}
+	}

@@ -41,7 +41,8 @@ prompt_t *GPromptWidget(const char *str, size_t str_len, int height, int width, 
 //WINDOW *GMenuWidget(menu_t *t, const char **opt, const char *msg);
 menu_t *GMenuWidget(const char **opt, const char *msg, size_t opt_size, int height, int width, int starty, int startx, enum border_type t);
 
-WINDOW *GInputWidget(input_t *t);
+input_t *GInputWidget();
+
 WINDOW *GInfoWidget();
 
 void FreeWidget(void *widget, enum free_type t);

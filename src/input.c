@@ -15,22 +15,22 @@ int tc_wgetnstr(WINDOW *w, char *buf, size_t buf_len, int y, int x)
 //#define ctrl(x)           ((x) & 0x1f)
 #define BACKSPACE 263
 	noecho();
-	if (!buf) {
+	if (!buf)
 		error_panic(stderr, "Buf cannot be NULL\n");
-	} else {
+	else
 		memset(buf, 0, buf_len);
-	}
+	
 	int cury, curx;
 	int ch, count = 0;
 	wmove(w, y, x);
 	while (count>=0 && (ch = wgetch(w)) != '\n') {
-		if (ch < 48) // disable 'unreadable' characters
+		if (ch < 48 || ch == KEY_DOWN || ch == KEY_UP || ch == KEY_LEFT || ch == KEY_RIGHT) // disable 'unreadable' characters
 			continue;
 		getyx(w, cury, curx);
 		if (curx > 1 && (ch == BACKSPACE || ch == KEY_BACKSPACE || ch == 127)) { /* delete */
 			wmove(w, y, curx-1);
 			delchar_w(w, y, curx-1);
-			if (count>0)
+			if (count > 0)
 				buf[--count]='\0';
 			else
 				error_panic(stderr, "Index out of array: 1\n");

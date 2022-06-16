@@ -11,9 +11,10 @@ SOURCES=$(O)/main.c\
 				$(O)/widget.c\
 
 DEST=tc
-FLAGS=-Wall \
-			-lncurses \
-			-g
+FLAGS=-Wall\
+			-lpanel\
+			-lncurses\
+			-g\
 
 all:
 	$(COMPILER) $(SOURCES) $(FLAGS) -o $(DEST)

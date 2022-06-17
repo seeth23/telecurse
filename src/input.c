@@ -15,7 +15,7 @@ winput_h *input_init(WINDOW *win, size_t len, int starty, int startx)
 		error_panic(stderr, "Could not allocate memory for winput_h->str!\n");
 	i->starty = starty;
 	i->startx = startx;
-	if (i->cury < 0 || i->curx < 0)
+	if (i->starty < 0 || i->starty < 0)
 		error_panic(stderr, "winput->starty or winput_h->startx cannot be <= 0 for winput_h\n");
 	i->cury = i->starty;
 	i->curx = i->startx;
@@ -112,14 +112,18 @@ static int tc_buf_overflow(winput_h *t)
 	return t->current_pos >= t->str_len ? 1 : 0;
 }
 
+static int tc_isspace(int ch)
+{
+	return ch == ' ' ? 1 : 0;
+}
 //#define ctrl(x)           ((x) & 0x1f)
-
 /* void (*filter)(int ch) callback checks if ch is f1-f12 key returns nothing
  * because it will handle if e.g. f5 for quit is pressed so no need to return */
 char *tc_wreadstr(winput_h *t, void (*filter)(int ch))
 {
 	int isascii;
 	int isdelete;
+	int isspace;
 	if (!t) {
 		error_panic(stderr, "winput_h cannot be (null)\n");
 	}
@@ -134,8 +138,9 @@ char *tc_wreadstr(winput_h *t, void (*filter)(int ch))
 			tc_delch(t);
 			continue;
 		}
+		isspace = tc_isspace(t->ch);
 		isascii = tc_isascii(t->ch);
-		if (isascii) {
+		if (isascii || isspace) {
 			if (tc_buf_overflow(t))
 				continue;
 			tc_putch(t);

@@ -33,7 +33,7 @@ void shutdown()
 
 void handler(const char **actions, int i) {
 	//shutdown();
-	printf("%s WAS CHOSEN. %d option\n", actions[i], i+1);
+	//printf("%s WAS CHOSEN. %d option\n", actions[i], i+1);
 }
 
 int main()
@@ -44,7 +44,7 @@ int main()
 	getmaxyx(stdscr, maxy, maxx);*/
 	/* --------------Examples using widgets--------------- */
 	/* ------------------PROMT-WIDGET--------------------- */
-	prompt_t *name_prompt_widget = GPromptWidget("Enter name", 18, 5, 20, 1, 1, border_type2);
+	prompt_t *name_prompt_widget = GPromptWidget("Enter name", 18, 5, 20, 3, 3, border_type2);
 	name_prompt_widget->read(name_prompt_widget);
 	/* After reading you can extract answer by writing widget->answer and save somewhere else it with strcpy */
 	FreeWidget(name_prompt_widget, free_prompt);
@@ -59,7 +59,8 @@ int main()
 	FreeWidget(menu_widget, free_menu);
 	/* ------------------INPUT-WIDGET--------------------- */
 	/* input widget is not necessary
-	 * because I already have prompt with possible NULL as first param */
+	 * because I already have prompt with possible NULL as first param
+	 * so it literally looks like regular input window */
 	/* ------------------INFO-WIDGET---------------------- */
 	info_t *info_widget = GInfoWidget("Chat", 7, 15, 2, 2, border_default);
 	FreeWidget(info_widget, free_info);

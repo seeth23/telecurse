@@ -43,26 +43,26 @@ static void RenderMenu(menu_t *t)
 static void ChooseOption(menu_t *t, void (*handler)(const char **actions, int index))
 {
 	int ch;
-	int render = 0;
+	int render = FALSE;
 	while ((ch = wgetch(t->w))) {
 		switch (ch) {
 			case KEY_DOWN:
 				if (t->current_item < t->all_items) {
 					t->current_item++;
-					render = 1;
+					render = TRUE;
 				}
 				break;
 			case KEY_UP:
 				if (t->current_item > 0) {
 					t->current_item--;
-					render = 1;
+					render = TRUE;
 				}
 				break;
 			case KB_ENTER:
 				handler(t->options, t->current_item);
 				return; /* return to exit function. If break used -- menu widget will not end */
 			default:
-				render = 0;
+				render = FALSE;
 				break;
 		}
 		if (render)
@@ -84,7 +84,7 @@ prompt_t *GPromptWidget(
 		error_panic(stderr, "Could not allocate memory for prompt widget\n");
 	}
 	t->s = GInitSz(height, width, starty, startx);
-	window_t *inf = t->s;
+	window_t *inf = t->s; /* just for shortcut */
 
 	t->w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, bt);
 	t->ans_size = str_len;
@@ -100,6 +100,9 @@ prompt_t *GPromptWidget(
 		wprintw(t->w, "%s", t->question);
 	wrefresh(t->w);
 	inf = NULL;
+
+	t->p = new_panel(t->w);
+
 	return t;
 }
 
@@ -127,8 +130,10 @@ menu_t *GMenuWidget(
 	t->choose = ChooseOption;
 	t->current_item = 0;
 	t->all_items = opt_size-2; /* -1 for removing NULL line and -1 because starts from 0 so (-1)+(-1)=-2 */
-
 	RenderMenu(t);
+	inf = NULL;
+
+	t->p = new_panel(t->w);
 	return t;
 }
 
@@ -145,7 +150,7 @@ info_t *GInfoWidget(
 		int startx,
 		enum border_type bt)
 {
-	info_t *t = malloc(sizeof(input_t));
+	info_t *t = malloc(sizeof(info_t));
 	if (!t) {
 		error_panic(stderr, "Could not allocate memory for input widget\n");
 	}
@@ -158,27 +163,38 @@ info_t *GInfoWidget(
 		wprintw(t->w, "%s", window_name);
 		wrefresh(t->w);
 	}
+	t->p = new_panel(t->w);
+	inf = NULL;
 	return t;
+}
+
+static void tc_upd_pan()
+{
+	update_panels();
+	doupdate();
 }
 
 void FreeWidget(void *widget, enum free_type t)
 {
 	switch(t) {
+#if 0
 		case free_input: {
 			input_t *i = (input_t *)widget;
 			if (i->s)
 				free(i->s);
-			if (i->w) {
+			if (i->w)
 				clr_win(i->w);
-			}
 			break;
 		}
+#endif
 		case free_menu: {
 			menu_t *i = (menu_t *)widget;
 			if (i->s)
 				free(i->s);
 			if (i->w) {
+				del_panel(i->p);
 				clr_win(i->w);
+				tc_upd_pan();
 			}
 			return;
 		}
@@ -187,7 +203,9 @@ void FreeWidget(void *widget, enum free_type t)
 			if (i->s)
 				free(i->s);
 			if (i->w) {
+				del_panel(i->p);
 				clr_win(i->w);
+				tc_upd_pan();
 			}
 			if (i->answer)
 				free(i->answer);
@@ -198,7 +216,9 @@ void FreeWidget(void *widget, enum free_type t)
 			if (i->s)
 				free(i->s);
 			if (i->w) {
+				del_panel(i->p);
 				clr_win(i->w);
+				tc_upd_pan();
 			}
 			break;
 		}

@@ -1,5 +1,5 @@
-#ifndef __TC_TYPES__
-#define __TC_TYPES__
+#ifndef __TC_TYPES_H
+#define __TC_TYPES_H
 
 enum border_type {
 	border_default,
@@ -23,7 +23,7 @@ struct user_info {
 enum free_type {
 	free_prompt,
 	free_menu,
-	free_input,
+	//free_input,
 	free_info,
 };
 

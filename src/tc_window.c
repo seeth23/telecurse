@@ -35,16 +35,16 @@ WINDOW *alloc_win(int h, int w, int y, int x, enum border_type type)
 	keypad(win, TRUE); /* enable keys like arrows, backspace, home etc. (not enabled by default for WINDOW) */
 	wmove(win, 0, 1); /* init cursor at the start of the box */
 	border_window(win, type);
-
 	wrefresh(win);
 	return win;
 }
 
-
+#if 0
 int write_window(WINDOW *w)
 {
 	return 0;
 }
+#endif
 
 void clr_win(WINDOW *w)
 {

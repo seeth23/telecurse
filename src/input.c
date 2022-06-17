@@ -78,11 +78,10 @@ void tc_wgetnstr(WINDOW *w, char *buf, size_t buf_len, int y, int x)
 
 /* TODO Super Global Function for input parsing */
 /* -------------------------------------- */
-/* TODO MAYBE change 1/0 to TRUE/FALSE for better documentation */
 
 static int tc_isascii(int ch)
 {
-	return (ch >= 33 && ch <= 127) ? 1 : 0;
+	return (ch >= 33 && ch <= 127) ? TRUE : FALSE;
 }
 
 static void tc_putch(winput_h *t)
@@ -104,17 +103,17 @@ static void tc_delch(winput_h *t)
 
 static int tc_isdelete(int ch)
 {
-	return (ch == KB_BACKSPACE || ch == KEY_BACKSPACE || ch == 127) ? 1 : 0;
+	return (ch == KB_BACKSPACE || ch == KEY_BACKSPACE || ch == 127) ? TRUE : FALSE;
 }
 
 static int tc_buf_overflow(winput_h *t)
 {
-	return t->current_pos >= t->str_len ? 1 : 0;
+	return t->current_pos >= t->str_len ? TRUE : FALSE;
 }
 
 static int tc_isspace(int ch)
 {
-	return ch == ' ' ? 1 : 0;
+	return ch == ' ' ? TRUE : FALSE;
 }
 //#define ctrl(x)           ((x) & 0x1f)
 /* void (*filter)(int ch) callback checks if ch is f1-f12 key returns nothing

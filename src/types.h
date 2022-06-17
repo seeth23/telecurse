@@ -6,7 +6,6 @@ enum border_type {
 	border_type1,
 	border_type2,
 	border_type3,
-
 };
 
 extern enum border_type t;
@@ -25,6 +24,7 @@ enum free_type {
 	free_prompt,
 	free_menu,
 	free_input,
+	free_info,
 };
 
 #endif

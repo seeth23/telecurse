@@ -22,12 +22,15 @@ winput_h *input_init(WINDOW *win, size_t len, int starty, int startx)
 	return i;
 }
 
-/* TODO free malloced stuffs here */
 void free_winput(winput_h *t)
 {
-
+	if (!t)
+		return;
+	t->w = NULL;
+	t->str = NULL;
+	free(t);
 }
-
+#if 0
 static void delchar_w(WINDOW *w, int y, int x)
 {
 	int oldy=getcury(w), oldx=getcurx(w);
@@ -36,12 +39,9 @@ static void delchar_w(WINDOW *w, int y, int x)
 	wmove(w, oldy, oldx);
 }
 
-/* TODO Super Global Function for input parsing */
-#define KB_BACKSPACE 263
 
 void tc_wgetnstr(WINDOW *w, char *buf, size_t buf_len, int y, int x)
 {
-//#define ctrl(x)           ((x) & 0x1f)
 	noecho();
 	if (!buf)
 		error_panic(stderr, "Buf cannot be NULL\n");
@@ -74,14 +74,15 @@ void tc_wgetnstr(WINDOW *w, char *buf, size_t buf_len, int y, int x)
 	}
 	buf[count] = 0;
 }
+#endif
 
+/* TODO Super Global Function for input parsing */
 /* -------------------------------------- */
 /* TODO MAYBE change 1/0 to TRUE/FALSE for better documentation */
 
-/* TODO Check if ch is ascii or printable return 1 either 0 */
 static int tc_isascii(int ch)
 {
-	return 1;
+	return (ch >= 33 && ch <= 127) ? 1 : 0;
 }
 
 static void tc_putch(winput_h *t)
@@ -101,8 +102,6 @@ static void tc_delch(winput_h *t)
 	}
 }
 
-
-/* TODO Check if ch is delete key return 1 either 0 */
 static int tc_isdelete(int ch)
 {
 	return (ch == KB_BACKSPACE || ch == KEY_BACKSPACE || ch == 127) ? 1 : 0;
@@ -113,6 +112,8 @@ static int tc_buf_overflow(winput_h *t)
 	return t->current_pos >= t->str_len ? 1 : 0;
 }
 
+//#define ctrl(x)           ((x) & 0x1f)
+
 /* void (*filter)(int ch) callback checks if ch is f1-f12 key returns nothing
  * because it will handle if e.g. f5 for quit is pressed so no need to return */
 char *tc_wreadstr(winput_h *t, void (*filter)(int ch))
@@ -120,19 +121,20 @@ char *tc_wreadstr(winput_h *t, void (*filter)(int ch))
 	int isascii;
 	int isdelete;
 	if (!t) {
-		error_panic(stderr, "winput_h can not be (null)\n");
+		error_panic(stderr, "winput_h cannot be (null)\n");
 	}
 	noecho();
 	wmove(t->w, t->cury, t->curx);
-
 	while ((t->ch = wgetch(t->w)) != '\n') {
-		filter(t->ch); /* check for *special* kb_keys */
-		isascii = tc_isascii(t->ch);
+		/* filter can be NULL */
+		if (filter)
+			filter(t->ch); /* check for *special* kb_keys */
 		isdelete = tc_isdelete(t->ch);
 		if (isdelete) {
 			tc_delch(t);
 			continue;
 		}
+		isascii = tc_isascii(t->ch);
 		if (isascii) {
 			if (tc_buf_overflow(t))
 				continue;

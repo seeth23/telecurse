@@ -32,7 +32,7 @@ void shutdown()
 }
 
 void handler(const char **actions, int i) {
-	shutdown();
+	//shutdown();
 	printf("%s WAS CHOSEN. %d option\n", actions[i], i+1);
 }
 
@@ -54,14 +54,17 @@ int main()
 	/* Option list must end with NULL in case of internal implementation, either will segfault happen */
 	/* And the size of these option list must be size-1, again in case of internal implementation: just to
 	 * not print unnecessary line */
-
 	const char *opt[] = { "Option1", "Option2", "Option3", "Option4", NULL };
 	size_t size = OPTIONS_SIZE(opt);
-	menu_t *menu_widget = GMenuWidget(opt, "Options are", size-1, BASE_MENU_HEIGHT, 20, 1, 1, border_default);
+	menu_t *menu_widget = GMenuWidget(opt, "Options are", size, BASE_MENU_HEIGHT, 20, 1, 1, border_default);
 	menu_widget->choose(menu_widget, handler);
 	FreeWidget(menu_widget, free_menu);
 	/* ------------------INPUT-WIDGET--------------------- */
+	/* input widget is not necessary
+	 * because I already have prompt with possible NULL as first param */
 	/* ------------------INFO-WIDGET---------------------- */
+	info_t *info_widget = GInfoWidget("Chat", 7, 15, 2, 2, border_default);
+	FreeWidget(info_widget, free_info);
 	/* --------------------------------------------------- */
 
 	shutdown();

@@ -48,7 +48,9 @@ int write_window(WINDOW *w)
 
 void clr_win(WINDOW *w)
 {
-	wclear(w);
-	wrefresh(w);
-	delwin(w);
+	if (w) {
+		wclear(w);
+		wrefresh(w);
+		delwin(w);
+	}
 }

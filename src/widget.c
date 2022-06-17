@@ -48,7 +48,7 @@ static void ChooseOption(menu_t *t, void (*handler)(const char **actions, int in
 	while ((ch = wgetch(t->w)) /*&& index >= 0*/) {
 		switch (ch) {
 			case KEY_DOWN:
-				if (t->current_item < t->all_items-1)
+				if (t->current_item < t->all_items)
 					t->current_item++;
 				break;
 			case KEY_UP:
@@ -92,7 +92,9 @@ prompt_t *GPromptWidget(
 	if (!t->answer) {
 		error_panic(stderr, "Could not alloc memory for buffer\n");
 	}
-	wprintw(t->w, "%s", t->question);
+	/* t->question can be NULL, because it is not necessary, actually */
+	if (t->question)
+		wprintw(t->w, "%s", t->question);
 	wrefresh(t->w);
 	inf = NULL;
 	return t;
@@ -116,14 +118,25 @@ WINDOW *GPromptWidget(prompt_t *t, const char *str, size_t size)
 }
 #endif
 
-input_t *GInputWidget()
+
+#if 0
+input_t *GInputWidget(
+		int height,
+		int width,
+		int starty,
+		int startx,
+		enum border_type bt)
 {
 	input_t *t = malloc(sizeof(input_t));
 	if (!t) {
 		error_panic(stderr, "Could not allocate memory for input widget\n");
 	}
+	t->s = GInitSz(height, width, starty, startx);
+	window_t *inf = t->s; /* just for shortcut */
+	t->w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, bt);
 	return t;
 }
+#endif
 
 menu_t *GMenuWidget(
 		const char **opt,
@@ -148,7 +161,7 @@ menu_t *GMenuWidget(
 	t->options = opt;
 	t->choose = ChooseOption;
 	t->current_item = 0;
-	t->all_items = opt_size;
+	t->all_items = opt_size-1; /* -1 for removing NULL line */
 
 	RenderMenu(t);
 #if 0
@@ -191,9 +204,33 @@ WINDOW *GMenuWidget(menu_t *t, const char **opt, const char *msg)
 }
 #endif
 
-WINDOW *GInfoWidget()
+static void WriteInfo(info_t *t, const char *str)
 {
-	return NULL;
+	wmove(t->w, 1, 1);
+}
+
+info_t *GInfoWidget(
+		const char *window_name,
+		int height,
+		int width,
+		int starty,
+		int startx,
+		enum border_type bt)
+{
+	info_t *t = malloc(sizeof(input_t));
+	if (!t) {
+		error_panic(stderr, "Could not allocate memory for input widget\n");
+	}
+	t->s = GInitSz(height, width, starty, startx);
+	window_t *inf = t->s; /* just for shortcut */
+	t->w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, bt);
+	t->msg_num = 0;
+	t->write = WriteInfo;
+	if (window_name) {
+		wprintw(t->w, "%s", window_name);
+		wrefresh(t->w);
+	}
+	return t;
 }
 
 
@@ -227,6 +264,15 @@ void FreeWidget(void *widget, enum free_type t)
 			}
 			if (i->answer)
 				free(i->answer);
+			break;
+		}
+		case free_info: {
+			info_t *i = (info_t *)widget;
+			if (i->s)
+				free(i->s);
+			if (i->w) {
+				clr_win(i->w);
+			}
 			break;
 		}
 	}

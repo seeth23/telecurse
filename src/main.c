@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <ncurses.h>
 #include <stdlib.h>
-#include <signal.h>
+#include <sys/socket.h>
 
 #include "pc_error.h"
 #include "tc_window.h"
@@ -11,15 +11,14 @@
 #include "misc.h"
 #include "math/center.h"
 
-void rerender_window(WINDOW *w, enum border_type);
+static void rerender_window(WINDOW *w, enum border_type);
 
-void print_fkeys();
-void shutdown();
-void init();
-void sigint_handler(int sig);
+static void print_fkeys();
+static void tc_shutdown();
+static void init();
 
 /* must end up with NULL for easier looping */
-const char *fkeys_info[] = {"F1 - Help", "F5 - Exit", NULL};
+static const char *fkeys_info[] = {"F1 - Help", "F2 - Find", "F3 - Users", "F5 - Exit", NULL};
 
 enum {
 	NAME_PROMPT_HEIGHT = 4,
@@ -30,27 +29,32 @@ enum {
 	INPUT_CHAT_WIDTH   = 100,
 };
 
+typedef struct CenterCoordinates {
+	int y, x;
+} centercords_t;
+
 int main()
 {
 	init();
 	print_fkeys();
-	//signal(SIGINT, sigint_handler);
 
 	char name[18];
-	int prompt_starty;
-	int prompt_startx;
+	centercords_t nameprompt_cords;
+	centercords_t chat_cords;
+	centercords_t input_cords;
 
-	center_cord(NAME_PROMPT_HEIGHT, NAME_PROMPT_WIDTH, &prompt_starty, &prompt_startx);
-	prompt_t *name_prompt_widget = GPromptWidget("Enter name", 18/*strlen*/, NAME_PROMPT_HEIGHT, NAME_PROMPT_WIDTH, prompt_starty, prompt_startx, border_type2);
+	center_cord(NAME_PROMPT_HEIGHT, NAME_PROMPT_WIDTH, &nameprompt_cords.y, &nameprompt_cords.x);
+	center_cord(CHAT_HEIGHT, CHAT_WIDTH, &chat_cords.y, &chat_cords.x);
+	center_cord(INPUT_CHAT_HEIGHT, INPUT_CHAT_WIDTH, &input_cords.y, &input_cords.x);
+
+	prompt_t *name_prompt_widget = GPromptWidget("Enter name", 18, NAME_PROMPT_HEIGHT, NAME_PROMPT_WIDTH, nameprompt_cords.y, nameprompt_cords.x, border_type2);
 	name_prompt_widget->read(name_prompt_widget);
 	strcpy(name, name_prompt_widget->input);
 	FreeWidget(name_prompt_widget, free_prompt);
 
-	info_t *chat_widget = GInfoWidget("Chat", CHAT_HEIGHT, CHAT_WIDTH, getmaxy(stdscr)/2-CHAT_HEIGHT, getmaxx(stdscr)/2-CHAT_WIDTH/2, border_default);
-	prompt_t *input_prompt = GPromptWidget(NULL, 255, INPUT_CHAT_HEIGHT, INPUT_CHAT_WIDTH, getmaxy(stdscr)-20, getmaxx(stdscr)/2-INPUT_CHAT_WIDTH/2, border_type2);
+	info_t *chat_widget = GInfoWidget("Chat", CHAT_HEIGHT, CHAT_WIDTH, chat_cords.y, chat_cords.x, border_default);
+	prompt_t *input_prompt = GPromptWidget(NULL, 255, INPUT_CHAT_HEIGHT, INPUT_CHAT_WIDTH, input_cords.y+CHAT_HEIGHT, input_cords.x, border_type2);
 
-	//wmove(chat_widget->w, 2, 2);
-	
 	for (;;) {
 		input_prompt->read(input_prompt);
 		chat_widget->write(chat_widget, input_prompt->input, name);
@@ -61,11 +65,11 @@ int main()
 
 	FreeWidget(chat_widget, free_info);
 	FreeWidget(input_prompt, free_prompt);
-	shutdown();
+	tc_shutdown();
 	return 0;
 }
 
-void rerender_window(WINDOW *w, enum border_type bt)
+static void rerender_window(WINDOW *w, enum border_type bt)
 {
 	wclear(w);
 	box(w, 0, 0);
@@ -73,23 +77,20 @@ void rerender_window(WINDOW *w, enum border_type bt)
 	wrefresh(w);
 }
 
-void sigint_handler(int sig)
-{
-}
-
-void init()
+static void init()
 {
 	initscr();
 	keypad(stdscr, TRUE);
 	cbreak();
+	start_color();
 }
 
-void shutdown()
+static void tc_shutdown()
 {
 	endwin();
 }
 
-void print_fkeys()
+static void print_fkeys()
 {
 	const char **list = fkeys_info;
 	wmove(stdscr, 0, 0);

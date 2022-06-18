@@ -43,7 +43,7 @@ typedef struct MenuWidget {
 	size_t current_item;
 	size_t all_items;
 	const char **options;
-	void (*choose)(struct MenuWidget *, void (*handler)(const char **actions, int index));
+	void (*choose)(struct MenuWidget *, void (*handler)(int));
 } menu_t;
 
 //WINDOW *GPromptWidget(prompt_t *t, size_t sz);

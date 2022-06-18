@@ -1,7 +1,12 @@
 #include "widget.h"
 #include "keymap.h"
 
+#include "handlers/input_handlers.h"
+#include "handlers/menu_handlers.h"
+#include "misc.h"
+
 // TODO make another .c file for 'methods'
+// TODO make *FUNCTION* for printing horizontal list of f1-f12 actions on top of the program
 
 static window_t *GInitSz(int height, int width, int y, int x)
 {
@@ -16,15 +21,16 @@ static window_t *GInitSz(int height, int width, int y, int x)
 	return t;
 }
 
-static void ReadPrompt(prompt_t *t)
+/* TODO make separate file for 'callbacks' which I will include then */
+
+static void read_prompt(prompt_t *t)
 {
-	//tc_wgetnstr(t->w, t->answer, t->ans_size, 1, 1);
 	winput_h *winput = input_init(t->w, t->ans_size, 1, 1);
-	t->answer = tc_wreadstr(winput, NULL);
+	t->answer = tc_wreadstr(winput, handle_function_keys);
 	free_winput(winput);
 }
 
-static void RenderMenu(menu_t *t)
+static void render_menu(menu_t *t)
 {
 	const char **list = t->options;
 	size_t line = 0;
@@ -40,7 +46,7 @@ static void RenderMenu(menu_t *t)
 	wrefresh(t->w);
 }
 
-static void ChooseOption(menu_t *t, void (*handler)(const char **actions, int index))
+static void choose_option(menu_t *t, void (*handler)(int index))
 {
 	int ch;
 	int render = FALSE;
@@ -59,14 +65,15 @@ static void ChooseOption(menu_t *t, void (*handler)(const char **actions, int in
 				}
 				break;
 			case KB_ENTER:
-				handler(t->options, t->current_item);
+				if (handler)
+					handler(t->current_item);
 				return; /* return to exit function. If break used -- menu widget will not end */
 			default:
 				render = FALSE;
 				break;
 		}
 		if (render)
-			RenderMenu(t);
+			render_menu(t);
 	}
 }
 
@@ -89,7 +96,7 @@ prompt_t *GPromptWidget(
 	t->w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, bt);
 	t->ans_size = str_len;
 	t->question = str;
-	t->read = ReadPrompt;
+	t->read = read_prompt;
 
 	t->answer = malloc(sizeof(char)*t->ans_size);
 	if (!t->answer) {
@@ -127,10 +134,10 @@ menu_t *GMenuWidget(
 	mvwprintw(t->w, 0, 1, "%s", msg);
 
 	t->options = opt;
-	t->choose = ChooseOption;
+	t->choose = choose_option;
 	t->current_item = 0;
 	t->all_items = opt_size-2; /* -1 for removing NULL line and -1 because starts from 0 so (-1)+(-1)=-2 */
-	RenderMenu(t);
+	render_menu(t);
 	inf = NULL;
 
 	t->p = new_panel(t->w);
@@ -177,16 +184,6 @@ static void tc_upd_pan()
 void FreeWidget(void *widget, enum free_type t)
 {
 	switch(t) {
-#if 0
-		case free_input: {
-			input_t *i = (input_t *)widget;
-			if (i->s)
-				free(i->s);
-			if (i->w)
-				clr_win(i->w);
-			break;
-		}
-#endif
 		case free_menu: {
 			menu_t *i = (menu_t *)widget;
 			if (i->s)

@@ -9,6 +9,8 @@ SOURCES=$(O)/main.c\
 				$(O)/parse_conf.c\
 				$(O)/input.c\
 				$(O)/widget.c\
+				$(O)/handlers/input_handlers.c\
+				$(O)/handlers/menu_handlers.c\
 
 DEST=tc
 FLAGS=-Wall\

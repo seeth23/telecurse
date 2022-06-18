@@ -31,7 +31,6 @@ void handle_function_keys(int ch)
 			menu_widget->choose(menu_widget, test_handle_menu);
 			FreeWidget(menu_widget, free_menu);
 			break;
-			endwin();
 		}
 	}
 }

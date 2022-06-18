@@ -83,12 +83,20 @@ char *tc_wreadstr(winput_h *t, void (*filter)(int ch))
 	}
 	noecho();
 	wmove(t->w, t->cury, t->curx);
-	while ((t->ch = wgetch(t->w)) != '\n') {
+	int count = 0;
+	while ((t->ch = wgetch(t->w))) {
+		if (t->ch == '\n') {
+			if (count == 0)
+				continue;
+			else break;
+		}
 		/* filter can be NULL */
 		if (filter)
 			filter(t->ch); /* check for *special* kb_keys */
 		isdelete = tc_isdelete(t->ch);
 		if (isdelete) {
+			if (count > 0)
+				count--;
 			tc_delch(t);
 			continue;
 		}
@@ -98,8 +106,11 @@ char *tc_wreadstr(winput_h *t, void (*filter)(int ch))
 			if (tc_buf_overflow(t))
 				continue;
 			tc_putch(t);
+			if (count < t->str_len)
+				count++;
 		} else /* if !isascii then continue */
 			continue;
+		refresh();
 	}
 	t->str[t->current_pos] = '\0';
 	return t->str;

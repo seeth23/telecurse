@@ -144,9 +144,14 @@ menu_t *GMenuWidget(
 	return t;
 }
 
-static void write_infow(info_t *t, const char *str)
+static void write_infow(info_t *t, const char *str, const char *name)
 {
-	wmove(t->w, 1, 1);
+	t->msg_num++;
+	scrollok(t->w, TRUE);
+	wmove(t->w, t->current_y++, t->current_x);
+	wprintw(t->w, "%s:%s\n ", name, str);
+	border_window(t->w, t->s->border_type);
+	wrefresh(t->w);
 }
 
 info_t *GInfoWidget(
@@ -165,9 +170,12 @@ info_t *GInfoWidget(
 	window_t *inf = t->s; /* just for shortcut */
 	t->w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, bt);
 	t->msg_num = 0;
+	t->current_y = 1;
+	t->current_x = 1;
 	t->write = write_infow;
 	if (window_name) {
-		wprintw(t->w, "%s", window_name);
+		t->title = window_name;
+		wprintw(t->w, "%s", t->title);
 		wrefresh(t->w);
 	}
 	t->p = new_panel(t->w);

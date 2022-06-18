@@ -149,7 +149,7 @@ static void write_infow(info_t *t, const char *str, const char *name)
 	t->msg_num++;
 	scrollok(t->w, TRUE);
 	wmove(t->w, t->current_y++, t->current_x);
-	wprintw(t->w, "%s:%s\n ", name, str);
+	wprintw(t->w, "%s: %s\n ", name, str);
 	border_window(t->w, t->s->border_type);
 	wrefresh(t->w);
 }

@@ -10,15 +10,17 @@
 #include "widget.h"
 #include "misc.h"
 #include "math/center.h"
+#include "history.h"
 
 static void rerender_window(WINDOW *w, enum border_type);
 
 static void print_fkeys();
 static void tc_shutdown();
 static void init();
+static char *format_message(char *msg, char *name);
 
 /* must end up with NULL for easier looping */
-static const char *fkeys_info[] = {"F1 - Help", "F2 - Find", "F3 - Users", "F5 - Exit", NULL};
+static const char *fkeys_info[] = {"F1 - Help", "F2 - Find",  "F3 - Users", "F4 - History", "F5 - Exit", NULL};
 
 enum {
 	NAME_PROMPT_HEIGHT = 4,
@@ -29,9 +31,6 @@ enum {
 	INPUT_CHAT_WIDTH   = 100,*/
 };
 
-typedef struct CenterCoordinates {
-	int y, x;
-} centercords_t;
 
 int main()
 {
@@ -63,11 +62,15 @@ int main()
 	for (;;) {
 		input_prompt->read(input_prompt);
 		chat_widget->write(chat_widget, input_prompt->input, name);
+
+		char *tmp = format_message(input_prompt->input, name);
+		save_history(tmp);
+		free(tmp);
+
 		if (input_prompt->input)
 			free(input_prompt->input);
 		rerender_window(input_prompt->w, input_prompt->s->border_type);
 	}
-
 	FreeWidget(chat_widget, free_info);
 	FreeWidget(input_prompt, free_prompt);
 	tc_shutdown();
@@ -107,4 +110,13 @@ static void print_fkeys()
 		list++;
 	}
 	wmove(stdscr, 0, 0);
+}
+
+static char *format_message(char *msg, char *name)
+{
+	if (msg == NULL || name == NULL)
+		return NULL;
+	char *dest = malloc(strlen(msg)+strlen(name)+1);
+	sprintf(dest, "%s: %s", name, msg);
+	return dest;
 }

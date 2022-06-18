@@ -12,6 +12,7 @@ SOURCES=$(O)/main.c\
 				$(O)/handlers/input_handlers.c\
 				$(O)/handlers/menu_handlers.c\
 				$(O)/math/center.c\
+				$(O)/history.c\
 
 DEST=tc
 FLAGS=-Wall\

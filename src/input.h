@@ -1,10 +1,11 @@
 #ifndef __TC_INPUT__H
 #define __TC_INPUT__H
 
+#include <string.h>
+
 #include "pc_error.h"
 #include "tc_window.h"
 #include "keymap.h"
-#include <string.h>
 
 typedef struct WInput {
 	char *str;
@@ -16,7 +17,6 @@ typedef struct WInput {
 	int starty, startx;
 } winput_h;
 
-//void tc_wgetnstr(WINDOW *w, char *buf, size_t buf_len, int y, int x);
 char *tc_wreadstr(winput_h *t, void (*filter)(int ch));
 winput_h *input_init(WINDOW *win, size_t len, int starty, int startx);
 void free_winput(winput_h *t);

@@ -27,4 +27,8 @@ enum free_type {
 	free_info,
 };
 
+typedef struct CenterCoordinates {
+	int y, x;
+} centercords_t;
+
 #endif

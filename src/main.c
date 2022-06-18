@@ -23,10 +23,10 @@ static const char *fkeys_info[] = {"F1 - Help", "F2 - Find", "F3 - Users", "F5 -
 enum {
 	NAME_PROMPT_HEIGHT = 4,
 	NAME_PROMPT_WIDTH  = 20,
-	CHAT_HEIGHT        = 20,
-	CHAT_WIDTH         = 80,
-	INPUT_CHAT_HEIGHT  = 4,
-	INPUT_CHAT_WIDTH   = 100,
+	//CHAT_HEIGHT        = 20,
+	//CHAT_WIDTH         = 80,
+	/*INPUT_CHAT_HEIGHT  = 3,
+	INPUT_CHAT_WIDTH   = 100,*/
 };
 
 typedef struct CenterCoordinates {
@@ -43,6 +43,11 @@ int main()
 	centercords_t chat_cords;
 	centercords_t input_cords;
 
+	const int CHAT_HEIGHT = stdscr->_maxy/2;
+	const int CHAT_WIDTH = stdscr->_maxx/2;
+	const int INPUT_CHAT_HEIGHT = 3;
+	const int INPUT_CHAT_WIDTH = stdscr->_maxx/2;
+
 	center_cord(NAME_PROMPT_HEIGHT, NAME_PROMPT_WIDTH, &nameprompt_cords.y, &nameprompt_cords.x);
 	center_cord(CHAT_HEIGHT, CHAT_WIDTH, &chat_cords.y, &chat_cords.x);
 	center_cord(INPUT_CHAT_HEIGHT, INPUT_CHAT_WIDTH, &input_cords.y, &input_cords.x);
@@ -53,7 +58,7 @@ int main()
 	FreeWidget(name_prompt_widget, free_prompt);
 
 	info_t *chat_widget = GInfoWidget("Chat", CHAT_HEIGHT, CHAT_WIDTH, chat_cords.y, chat_cords.x, border_default);
-	prompt_t *input_prompt = GPromptWidget(NULL, 255, INPUT_CHAT_HEIGHT, INPUT_CHAT_WIDTH, input_cords.y+CHAT_HEIGHT, input_cords.x, border_type2);
+	prompt_t *input_prompt = GPromptWidget(NULL, 255, INPUT_CHAT_HEIGHT, INPUT_CHAT_WIDTH, input_cords.y+CHAT_HEIGHT/2+(INPUT_CHAT_HEIGHT/2+1), input_cords.x, border_type2);
 
 	for (;;) {
 		input_prompt->read(input_prompt);

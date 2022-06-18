@@ -1,5 +1,5 @@
-#ifndef __TC_WIDGET_H
-#define __TC_WIDGET_H
+#ifndef __TC_WIDGET_H__
+#define __TC_WIDGET_H__
 
 #include <ncurses.h>
 #include <panel.h>
@@ -7,10 +7,14 @@
 #include "tc_window.h"
 #include "types.h"
 #include "input.h"
+#include "keymap.h"
+
+#include "misc.h"
 
 typedef struct WindowProp {
 	int height, width;
 	int starty, startx;
+	int border_type;
 } window_t;
 
 typedef struct PromptWidget {
@@ -18,7 +22,7 @@ typedef struct PromptWidget {
 	WINDOW *w;
 	PANEL *p;
 	const char *question;
-	char *answer;
+	char *input;
 	size_t ans_size;
 	void (*read)(struct PromptWidget *);
 } prompt_t;

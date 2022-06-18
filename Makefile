@@ -11,6 +11,7 @@ SOURCES=$(O)/main.c\
 				$(O)/widget.c\
 				$(O)/handlers/input_handlers.c\
 				$(O)/handlers/menu_handlers.c\
+				$(O)/math/center.c\
 
 DEST=tc
 FLAGS=-Wall\
@@ -20,3 +21,7 @@ FLAGS=-Wall\
 
 all:
 	$(COMPILER) $(SOURCES) $(FLAGS) -o $(DEST)
+
+debug:
+	$(COMPILER) $(SOURCES) $(FLAGS) -D DEBUG -o debug_$(DEST)
+

@@ -71,7 +71,6 @@ static int tc_isspace(int ch)
 	return ch == ' ' ? TRUE : FALSE;
 }
 
-//#define ctrl(x)           ((x) & 0x1f)
 /* void (*filter)(int ch) callback checks if ch is f1-f12 key returns nothing
  * because it will handle if e.g. f5 for quit is pressed so no need to return */
 char *tc_wreadstr(winput_h *t, void (*filter)(int ch))

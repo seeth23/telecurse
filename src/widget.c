@@ -1,14 +1,12 @@
 #include "widget.h"
-#include "keymap.h"
 
 #include "handlers/input_handlers.h"
 #include "handlers/menu_handlers.h"
-#include "misc.h"
 
 // TODO make another .c file for 'methods'
 // TODO make *FUNCTION* for printing horizontal list of f1-f12 actions on top of the program
 
-static window_t *GInitSz(int height, int width, int y, int x)
+static window_t *GInitSz(int height, int width, int y, int x, enum border_type bt)
 {
 	window_t *t = malloc(sizeof(window_t));
 	if (!t) {
@@ -18,6 +16,7 @@ static window_t *GInitSz(int height, int width, int y, int x)
 	t->width = width;
 	t->starty = y;
 	t->startx = x;
+	t->border_type = bt;
 	return t;
 }
 
@@ -26,7 +25,7 @@ static window_t *GInitSz(int height, int width, int y, int x)
 static void read_prompt(prompt_t *t)
 {
 	winput_h *winput = input_init(t->w, t->ans_size, 1, 1);
-	t->answer = tc_wreadstr(winput, handle_function_keys);
+	t->input = tc_wreadstr(winput, handle_function_keys);
 	free_winput(winput);
 }
 
@@ -40,7 +39,7 @@ static void render_menu(menu_t *t)
 		else
 			wattroff(t->w, A_REVERSE);
 		/* adding 1 just in case to start from 1st line instead of 0 */
-		mvwprintw(t->w, 1+line++, 6, "%s", *list);
+		mvwprintw(t->w, 1+line++, 3, "%s", *list);
 		list++;
 	}
 	wrefresh(t->w);
@@ -67,6 +66,8 @@ static void choose_option(menu_t *t, void (*handler)(int index))
 			case KB_ENTER:
 				if (handler)
 					handler(t->current_item);
+				/*else
+					error_panic(stderr, "Callback for menu handling not specified!\n");*/
 				return; /* return to exit function. If break used -- menu widget will not end */
 			default:
 				render = FALSE;
@@ -90,7 +91,7 @@ prompt_t *GPromptWidget(
 	if (!t) {
 		error_panic(stderr, "Could not allocate memory for prompt widget\n");
 	}
-	t->s = GInitSz(height, width, starty, startx);
+	t->s = GInitSz(height, width, starty, startx, bt);
 	window_t *inf = t->s; /* just for shortcut */
 
 	t->w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, bt);
@@ -98,8 +99,8 @@ prompt_t *GPromptWidget(
 	t->question = str;
 	t->read = read_prompt;
 
-	t->answer = malloc(sizeof(char)*t->ans_size);
-	if (!t->answer) {
+	t->input = malloc(sizeof(char)*t->ans_size);
+	if (!t->input) {
 		error_panic(stderr, "Could not alloc memory for buffer\n");
 	}
 	/* t->question can be NULL, because it is not necessary, actually */
@@ -109,7 +110,6 @@ prompt_t *GPromptWidget(
 	inf = NULL;
 
 	t->p = new_panel(t->w);
-
 	return t;
 }
 
@@ -127,7 +127,7 @@ menu_t *GMenuWidget(
 	if (!t) {
 		error_panic(stderr, "Could not allocate memory for menu widget\n");
 	}
-	t->s = GInitSz(height+opt_size-1, width, starty, startx);
+	t->s = GInitSz(height+opt_size-1, width, starty, startx, bt);
 	window_t *inf = t->s; /* just for shortcut */
 
 	t->w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, bt);
@@ -144,7 +144,7 @@ menu_t *GMenuWidget(
 	return t;
 }
 
-static void WriteInfo(info_t *t, const char *str)
+static void write_infow(info_t *t, const char *str)
 {
 	wmove(t->w, 1, 1);
 }
@@ -161,11 +161,11 @@ info_t *GInfoWidget(
 	if (!t) {
 		error_panic(stderr, "Could not allocate memory for input widget\n");
 	}
-	t->s = GInitSz(height, width, starty, startx);
+	t->s = GInitSz(height, width, starty, startx, bt);
 	window_t *inf = t->s; /* just for shortcut */
 	t->w = alloc_win(inf->height, inf->width, inf->starty, inf->startx, bt);
 	t->msg_num = 0;
-	t->write = WriteInfo;
+	t->write = write_infow;
 	if (window_name) {
 		wprintw(t->w, "%s", window_name);
 		wrefresh(t->w);
@@ -193,7 +193,7 @@ void FreeWidget(void *widget, enum free_type t)
 				clr_win(i->w);
 				tc_upd_pan();
 			}
-			return;
+			break;
 		}
 		case free_prompt: {
 			prompt_t *i = (prompt_t *)widget;
@@ -204,8 +204,8 @@ void FreeWidget(void *widget, enum free_type t)
 				clr_win(i->w);
 				tc_upd_pan();
 			}
-			if (i->answer)
-				free(i->answer);
+			if (i->input)
+				free(i->input);
 			break;
 		}
 		case free_info: {

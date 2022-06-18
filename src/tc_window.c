@@ -1,7 +1,7 @@
 #include "tc_window.h"
 #include "pc_error.h"
 
-static WINDOW *border_window(WINDOW *w, enum border_type type)
+WINDOW *border_window(WINDOW *w, enum border_type type)
 {
 	switch (type) {
 		case border_default:

@@ -1,5 +1,5 @@
-#ifndef __TC_ERROR__H
-#define __TC_ERROR__H
+#ifndef __TC_ERROR_H__
+#define __TC_ERROR_H__
 
 #include <ncurses.h>
 #include <stdlib.h>

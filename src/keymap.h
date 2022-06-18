@@ -1,5 +1,5 @@
-#ifndef __KEYMAP__H
-#define __KEYMAP__H
+#ifndef __KEYMAP_H__
+#define __KEYMAP_H__
 
 
 #define KB_ENTER 10

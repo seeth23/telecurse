@@ -6,6 +6,9 @@
 #include "../types.h"
 #include "../history.h"
 
+/* TODO make history 'pages' and moving through them */
+
+
 static void test_handle_menu(int i)
 {
 	switch (i) {
@@ -22,13 +25,29 @@ enum {
 	MENU_WIDTH  = 10,
 };
 
-static void write_history(info_t *t, const char *msg, const char *null)
+
+//static size_t history_page_count;
+
+
+static void clear_lines(info_t *t)
 {
+	int i, j;
+	for (i = 1; i < t->s->height-1; i++) {
+		for (j = 1; j < t->s->width-1;j++) {
+			mvwaddch(t->w, i, j, ' ');
+		}
+	}
+}
+
+/* TODO rewrite this callback with 'page' system. I think it will be without `scrollok(t->w, TRUE)` */
+	/* TODO function that clears all lines but not border!!! */
+static void write_page_history(info_t *t, const char *msg, const char *null)
+{
+	//int page_lines = t->s->height-2;
 	t->msg_num++;
-	scrollok(t->w, TRUE);
-	wmove(t->w, t->current_y++, t->current_x);
-	wprintw(t->w, "%s\n ", msg);
-	border_window(t->w, t->s->border_type);
+
+	mvwprintw(t->w, 0, 1, "%s", t->title);
+	mvwprintw(t->w, t->current_y++, 1, "%s", msg);
 	wrefresh(t->w);
 }
 
@@ -42,7 +61,7 @@ void handle_function_keys(int ch)
 			//centercords_t help_cords;
 			break;
 		}
-		case KEY_F(2):{
+		case KEY_F(2): {
 			//centercords_t find_cords;
 			break;
 		}
@@ -63,15 +82,45 @@ void handle_function_keys(int ch)
 					history_cords.x,
 					border_default);
 
-			history_widget->write = write_history;
+			history_widget->write = write_page_history;
 			char **ptr = get_history();
-			while (*ptr)
-				history_widget->write(history_widget, *ptr++, NULL);
+
+			size_t history_page_current = 0;
+			size_t history_page_step = history_widget->s->height-2;
+
+			for (int i = 0; i < history_page_step && *(ptr+i); i++) {
+				history_widget->write(history_widget, *(ptr+i), NULL);
+			}
+
 			while ((ch = wgetch(history_widget->w))) {
 				switch (ch) {
 					case 'q':
 					case 'Q':
 						goto exit_while_label;
+						break;
+					case 'j': { /* down */
+						int PAGECOUNT = (double)history_size() / (double)history_page_step;
+						history_widget->current_y = 1;
+						if (history_page_current < PAGECOUNT) {
+							history_page_current++;
+							int new_step = history_page_step * history_page_current;
+							clear_lines(history_widget);
+							for (int i = 0; i < history_page_step && *(ptr+i+new_step); i++) {
+								history_widget->write(history_widget, *(ptr+i+new_step), NULL);
+							}
+						}
+					}
+						break;
+					case 'k': /* up */
+						history_widget->current_y = 1;
+						if (history_page_current>0) {
+							history_page_current--;
+							int new_step = history_page_step*history_page_current;
+							clear_lines(history_widget);
+							for (int i = 0; i < history_page_step && *(ptr+i+new_step); i++) {
+								history_widget->write(history_widget, *(ptr+i+new_step), NULL);
+							}
+						}
 						break;
 				}
 			}

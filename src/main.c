@@ -112,6 +112,7 @@ static void print_fkeys()
 	wmove(stdscr, 0, 0);
 }
 
+/* TODO add date to message */
 static char *format_message(char *msg, char *name)
 {
 	if (msg == NULL || name == NULL)

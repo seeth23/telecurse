@@ -12,5 +12,6 @@ int save_history(const char *msg);
 char **get_history();
 int remove_history();
 void free_history();
+int history_size();
 
 #endif

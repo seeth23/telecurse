@@ -16,6 +16,11 @@ static void alloc_history(size_t len)
 		error_panic(stderr, "Could not allocate memory for history pointer\n");
 }
 
+int history_size()
+{
+	return ipos-1;
+}
+
 int save_history(const char *msg)
 {
 	if (!msg)

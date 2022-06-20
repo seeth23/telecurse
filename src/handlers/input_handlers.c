@@ -6,10 +6,7 @@
 #include "../types.h"
 #include "../history.h"
 
-/* TODO make history 'pages' and moving through them */
-
-
-static void test_handle_menu(int i)
+static void quit_menu_handle(int i)
 {
 	switch (i) {
 		case 0:
@@ -20,14 +17,11 @@ static void test_handle_menu(int i)
 			break;
 	}
 }
+
 enum {
 	MENU_HEIGHT = 2,
 	MENU_WIDTH  = 10,
 };
-
-
-//static size_t history_page_count;
-
 
 static void clear_lines(info_t *t)
 {
@@ -39,13 +33,9 @@ static void clear_lines(info_t *t)
 	}
 }
 
-/* TODO rewrite this callback with 'page' system. I think it will be without `scrollok(t->w, TRUE)` */
-	/* TODO function that clears all lines but not border!!! */
 static void write_page_history(info_t *t, const char *msg, const char *null)
 {
-	//int page_lines = t->s->height-2;
 	t->msg_num++;
-
 	mvwprintw(t->w, 0, 1, "%s", t->title);
 	mvwprintw(t->w, t->current_y++, 1, "%s", msg);
 	wrefresh(t->w);
@@ -83,7 +73,7 @@ void handle_function_keys(int ch)
 					border_default);
 
 			history_widget->write = write_page_history;
-			char **ptr = get_history();
+			char ** ptr = get_history();
 
 			size_t history_page_current = 0;
 			size_t history_page_step = history_widget->s->height-2;
@@ -98,6 +88,7 @@ void handle_function_keys(int ch)
 					case 'Q':
 						goto exit_while_label;
 						break;
+					case KEY_DOWN:
 					case 'j': { /* down */
 						int PAGECOUNT = (double)history_size() / (double)history_page_step;
 						history_widget->current_y = 1;
@@ -111,6 +102,7 @@ void handle_function_keys(int ch)
 						}
 					}
 						break;
+					case KEY_UP:
 					case 'k': /* up */
 						history_widget->current_y = 1;
 						if (history_page_current>0) {
@@ -134,7 +126,7 @@ exit_while_label:
 			const char *opt[] = { "Yes", "No", NULL };
 			size_t opt_size = BLK_SIZE(opt);
 			menu_t *menu_widget = GMenuWidget(opt, "Exit?", opt_size, MENU_HEIGHT, MENU_WIDTH, quit_cords.y, quit_cords.x, border_default);
-			menu_widget->choose(menu_widget, test_handle_menu);
+			menu_widget->choose(menu_widget, quit_menu_handle);
 			FreeWidget(menu_widget, free_menu);
 			free_history();
 			break;

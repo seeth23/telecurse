@@ -1,9 +1,7 @@
 #include "history.h"
 
 static char *history[MAX_HISTORY];
-static size_t ipos = 0;
-
-/* TODO make timeline for string in history! */
+static ssize_t ipos = 0;
 
 static void alloc_history(size_t len)
 {
@@ -47,7 +45,7 @@ char **get_history()
 
 void free_history()
 {
-	while (ipos > 0) {
+	while (ipos >= 0) {
 		if (history[ipos])
 			free(history[ipos]);
 		ipos--;

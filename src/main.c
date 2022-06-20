@@ -30,14 +30,13 @@ enum {
 	/*INPUT_CHAT_HEIGHT  = 3,
 	INPUT_CHAT_WIDTH   = 100,*/
 };
-
+info_t *chat_widget;
 
 int main()
 {
 	init();
 	print_fkeys();
-
-	char name[18];
+	char name[20];
 	centercords_t nameprompt_cords;
 	centercords_t chat_cords;
 	centercords_t input_cords;
@@ -56,19 +55,42 @@ int main()
 	strcpy(name, name_prompt_widget->input);
 	FreeWidget(name_prompt_widget, free_prompt);
 
-	info_t *chat_widget = GInfoWidget("Chat", CHAT_HEIGHT, CHAT_WIDTH, chat_cords.y, chat_cords.x, border_default);
+	//info_t *chat_widget = GInfoWidget("Chat", CHAT_HEIGHT, CHAT_WIDTH, chat_cords.y, chat_cords.x, border_default);
+	chat_widget = GInfoWidget("Chat", CHAT_HEIGHT, CHAT_WIDTH, chat_cords.y, chat_cords.x, border_default);
 	prompt_t *input_prompt = GPromptWidget(NULL, 255, INPUT_CHAT_HEIGHT, INPUT_CHAT_WIDTH, input_cords.y+CHAT_HEIGHT/2+(INPUT_CHAT_HEIGHT/2+1), input_cords.x, border_type2);
 
+	/* this is actually test. When not typing it returns ERR(-1) so in function
+	 * tc_wreadstr(src/input.c) I return NULL and in that time when client is not printing you can ask
+	 * server for data with, probably, select?? need to try it out.
+	 * P.S. changes are only made in input.c and wtimeout line. In input.c changes are:
+	 * ```if (t->ch == ERR && count == 0) {
+	 *       return NULL;
+	 *    }
+	 * ```
+	*/
+	wtimeout(input_prompt->w, 200);
 	for (;;) {
 		input_prompt->read(input_prompt);
+		if (!input_prompt->input) {
+			/* function that uses select() and waits for server data */
+			printw("continued");
+			refresh();
+			continue;
+		}
+		/* instead of client write to chat, here must be function that sends message
+		 * to server instead of ->write(). */
 		chat_widget->write(chat_widget, input_prompt->input, name);
-
+	
+		/* save_history(str) must be in function that accepts message from server
+		 * then saves it to history, not on client! */
 		char *tmp = format_message(input_prompt->input, name);
 		save_history(tmp);
 		free(tmp);
-
+		
+		/* it should be always here */
 		if (input_prompt->input)
 			free(input_prompt->input);
+		/* the same as rerender_window() */
 		rerender_window(input_prompt->w, input_prompt->s->border_type);
 	}
 	FreeWidget(chat_widget, free_info);
@@ -112,11 +134,13 @@ static void print_fkeys()
 	wmove(stdscr, 0, 0);
 }
 
-/* TODO add date to message */
+/* TODO add date to message (optional) */
 static char *format_message(char *msg, char *name)
 {
 	if (msg == NULL || name == NULL)
 		return NULL;
+	//char *date = cur_date();
+	//char *dest = malloc(strlen(msg)+strlen(name)+strlen(date)+1);
 	char *dest = malloc(strlen(msg)+strlen(name)+1);
 	sprintf(dest, "%s: %s", name, msg);
 	return dest;

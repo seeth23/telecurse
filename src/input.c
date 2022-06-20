@@ -85,6 +85,9 @@ char *tc_wreadstr(winput_h *t, void (*filter)(int ch))
 	wmove(t->w, t->cury, t->curx);
 	int count = 0;
 	while ((t->ch = wgetch(t->w))) {
+		if (t->ch == ERR && count == 0) {
+			return NULL;
+		}
 		if (t->ch == '\n') {
 			if (count == 0)
 				continue;

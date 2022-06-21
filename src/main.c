@@ -1,7 +1,9 @@
-#include <stdio.h>
 #include <ncurses.h>
+#include <stdio.h>
 #include <stdlib.h>
+
 #include <sys/socket.h>
+#include <sys/select.h>
 
 #include "pc_error.h"
 #include "tc_window.h"
@@ -17,7 +19,7 @@ static void rerender_window(WINDOW *w, enum border_type);
 static void print_fkeys();
 static void tc_shutdown();
 static void init();
-static char *format_message(char *msg, char *name);
+static char *format_message_history(char *msg, char *name);
 
 /* must end up with NULL for easier looping */
 static const char *fkeys_info[] = {"F1 - Help", "F2 - Find",  "F3 - Users", "F4 - History", "F5 - Exit", NULL};
@@ -59,8 +61,8 @@ int main()
 	chat_widget = GInfoWidget("Chat", CHAT_HEIGHT, CHAT_WIDTH, chat_cords.y, chat_cords.x, border_default);
 	prompt_t *input_prompt = GPromptWidget(NULL, 255, INPUT_CHAT_HEIGHT, INPUT_CHAT_WIDTH, input_cords.y+CHAT_HEIGHT/2+(INPUT_CHAT_HEIGHT/2+1), input_cords.x, border_type2);
 
-	/* this is actually test. When not typing it returns ERR(-1) so in function
-	 * tc_wreadstr(src/input.c) I return NULL and in that time when client is not printing you can ask
+	/* this is actually test. When not typing for 200(second parameter of wtimeout) it returns ERR(-1) if key not pressed within that delay.
+	 * Changed tc_wreadstr(src/input.c) a bit: I return NULL and in that time when client is not printing you can ask
 	 * server for data with, probably, select?? need to try it out.
 	 * P.S. changes are only made in input.c and wtimeout line. In input.c changes are:
 	 * ```if (t->ch == ERR && count == 0) {
@@ -70,29 +72,40 @@ int main()
 	*/
 	wtimeout(input_prompt->w, 200);
 	for (;;) {
+		char fmt_message_name[512]; /* in this variable I will use sprintf(fmt_message_name, "%s: %s", ->input, name). Then it will be send to server. */
+
 		input_prompt->read(input_prompt);
 		if (!input_prompt->input) {
 			/* function that uses select() and waits for server data */
-			printw("continued");
-			refresh();
+			struct timeval timeout;
+			timeout.tv_sec = 0;
+			timeout.tv_usec = 200;
+			select(4, NULL, NULL, NULL, &timeout);
 			continue;
 		}
 		/* instead of client write to chat, here must be function that sends message
 		 * to server instead of ->write(). */
 		chat_widget->write(chat_widget, input_prompt->input, name);
-	
+
 		/* save_history(str) must be in function that accepts message from server
 		 * then saves it to history, not on client! */
-		char *tmp = format_message(input_prompt->input, name);
+		char *tmp = format_message_history(input_prompt->input, name);
 		save_history(tmp);
 		free(tmp);
-		
-		/* it should be always here */
+
+		/* it should be always here either memory leak occurs */
 		if (input_prompt->input)
 			free(input_prompt->input);
 		/* the same as rerender_window() */
 		rerender_window(input_prompt->w, input_prompt->s->border_type);
 	}
+
+	/* Unreachable code. when F5 is pressed it uses its own handlers for exit.
+	 * Maybe I should change some `global` variable, so that can access to multiply files(its very unpretty imo).
+	 * So I can change condition in 'forever' loop like CHAT_RUNNIG = 0, so code reaches this section. Need to think about it.
+	 * P.S. by the way i will definetily work because of wtimeout and (!input_prompt->input) condition with continue. Maybe that's the case */
+
+	free_history();
 	FreeWidget(chat_widget, free_info);
 	FreeWidget(input_prompt, free_prompt);
 	tc_shutdown();
@@ -135,7 +148,7 @@ static void print_fkeys()
 }
 
 /* TODO add date to message (optional) */
-static char *format_message(char *msg, char *name)
+static char *format_message_history(char *msg, char *name)
 {
 	if (msg == NULL || name == NULL)
 		return NULL;

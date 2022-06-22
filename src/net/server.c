@@ -24,6 +24,7 @@ enum consts {
 
 enum errors {
 	sock_err = -1,
+	invalid_socket,
 };
 
 enum select_ret {
@@ -121,7 +122,7 @@ int main(int argc, char **argv)
 
 		if (client_fds.fd_count > 0)
 			for (i = 0, fd = client_fds.fds[i]; i < max_d+1; ++i, fd = client_fds.fds[i]) {
-				if (!fd)
+				if (fd == invalid_socket)
 					continue;
 				FD_SET(fd, &readfds);
 				if (client_fds.buffer[fd])
@@ -152,9 +153,10 @@ int main(int argc, char **argv)
 		}
 
 		/* this loop can be a part of a function with callback */
+		/* loop for checking every client socket for ready IO */
 		if (client_fds.fd_count > 0) {
 			for (i = 0, fd = client_fds.fds[i]; i < max_d+1; ++i, fd = client_fds.fds[i]) {
-				if (!fd)
+				if (fd == invalid_socket)
 					continue;
 				if (FD_ISSET(fd, &readfds)) {
 					read_res = read(fd, server_buffer, sizeof(server_buffer));
@@ -167,14 +169,13 @@ int main(int argc, char **argv)
 						perror("read()");
 						continue;
 					}
-#if 0
-					if (client_fds.buffer[fd]) {
-						free(client_fds.buffer[fd]);
+
+					if (free_buffer(client_fds.buffer[fd])) {
+#if DEBUG
+						printf("I guess it will never execute\n");
+#endif
 						client_fds.buffer[fd] = NULL;
 					}
-#endif
-					if (free_buffer(client_fds.buffer[fd]))
-						client_fds.buffer[fd] = NULL;
 
 					client_fds.buffer[fd] = malloc(read_res);
 					if (!client_fds.buffer[fd]) {
@@ -182,19 +183,18 @@ int main(int argc, char **argv)
 						continue;
 					}
 
-					strcpy(client_fds.buffer[fd], server_buffer);
+					//strcpy(client_fds.buffer[fd], server_buffer);
+					sprintf(client_fds.buffer[fd], "%d: %s", fd, server_buffer);
 					memset(server_buffer, 0, sizeof(server_buffer));
 				}
 
 				if (FD_ISSET(fd, &writefds)) {
-					if (client_fds.buffer[fd])
-						write(fd, client_fds.buffer[fd], strlen(client_fds.buffer[fd]));
-#if 0
-					if (client_fds.buffer[fd]) {
-						free(client_fds.buffer[fd]);
-						client_fds.buffer[fd] = NULL;
+					for (int j = 0; j < max_d+1; j++) {
+						if (client_fds.fds[j] == invalid_socket)
+							continue;
+						write(client_fds.fds[j], client_fds.buffer[fd], strlen(client_fds.buffer[fd]));
 					}
-#endif
+
 					if (free_buffer(client_fds.buffer[fd]))
 						client_fds.buffer[fd] = NULL;
 				}
@@ -211,16 +211,12 @@ void shutdown_clients(struct clients_d *t)
 	int32_t max_d = max_fd(t);
 	int32_t i, fd;
 	for (i = 0, fd = t->fds[i]; i < max_d+1; ++i, fd = t->fds[i]) {
-		if (!fd)
+		if (fd == invalid_socket)
 			continue;
-#if 0
-		if (t->buffer[fd]) {
-			free(t->buffer[fd]);
-			t->buffer[fd] = NULL;
-		}
-#endif
+
 		if (free_buffer(t->buffer[fd]))
 			t->buffer[fd] = NULL;
+
 		shutdown(fd, SHUT_RDWR);
 		close(fd);
 	}
@@ -244,14 +240,10 @@ void rem_fd(struct clients_d *t, int32_t fd)
 	t->fds[fd] = 0;
 	t->fd_count--;
 	printf("%d disconnected\n", fd);
-#if 0
-	if (t->buffer[fd]) {
-		free(t->buffer[fd]);
-		t->buffer[fd] = NULL;
-	}
-#endif
+
 	if (free_buffer(t->buffer[fd]))
 		t->buffer[fd] = NULL;
+	
 	shutdown(fd, SHUT_RDWR);
 	close(fd);
 }

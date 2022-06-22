@@ -1,3 +1,6 @@
-*
+tc
+debug_tc
+server
+client
 *.txt
 src/net/*\.sh

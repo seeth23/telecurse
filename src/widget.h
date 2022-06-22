@@ -39,7 +39,7 @@ typedef struct InfoWidget {
 	size_t msg_num;
 	const char *title;
 	int current_y, current_x;
-	void (*write)(struct InfoWidget *, const char *, const char *);
+	void (*write)(struct InfoWidget *, const char *str);
 } info_t;
 
 typedef struct MenuWidget {

@@ -16,6 +16,7 @@ SOURCES=$(O)/main.c\
 				$(M)/center.c\
 				$(O)/history.c\
 				$(O)/misc.c\
+				$(O)/client.c\
 
 DEST=tc
 FLAGS=-Wall\

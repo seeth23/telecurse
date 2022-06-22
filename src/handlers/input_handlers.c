@@ -33,7 +33,7 @@ static void clear_lines(info_t *t)
 	}
 }
 
-static void write_page_history(info_t *t, const char *msg, const char *null)
+static void write_page_history(info_t *t, const char *msg)
 {
 	t->msg_num++;
 	mvwprintw(t->w, 0, 1, "%s", t->title);
@@ -73,13 +73,13 @@ void handle_function_keys(int ch)
 					border_default);
 
 			history_widget->write = write_page_history;
-			char ** ptr = get_history();
+			char **ptr = get_history();
 
 			size_t history_page_current = 0;
 			size_t history_page_step = history_widget->s->height-2;
 
 			for (int i = 0; i < history_page_step && *(ptr+i); i++) {
-				history_widget->write(history_widget, *(ptr+i), NULL);
+				history_widget->write(history_widget, *(ptr+i));
 			}
 
 			while ((ch = wgetch(history_widget->w))) {
@@ -97,7 +97,7 @@ void handle_function_keys(int ch)
 							int new_step = history_page_step * history_page_current;
 							clear_lines(history_widget);
 							for (int i = 0; i < history_page_step && *(ptr+i+new_step); i++) {
-								history_widget->write(history_widget, *(ptr+i+new_step), NULL);
+								history_widget->write(history_widget, *(ptr+i+new_step));
 							}
 						}
 					}
@@ -110,7 +110,7 @@ void handle_function_keys(int ch)
 							int new_step = history_page_step*history_page_current;
 							clear_lines(history_widget);
 							for (int i = 0; i < history_page_step && *(ptr+i+new_step); i++) {
-								history_widget->write(history_widget, *(ptr+i+new_step), NULL);
+								history_widget->write(history_widget, *(ptr+i+new_step));
 							}
 						}
 						break;

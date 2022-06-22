@@ -13,13 +13,13 @@
 #include "misc.h"
 #include "math/center.h"
 #include "history.h"
+#include "client.h"
 
 static void rerender_window(WINDOW *w, enum border_type);
 
 static void print_fkeys();
 static void tc_shutdown();
 static void init();
-static char *format_message_history(char *msg, char *name);
 
 /* must end up with NULL for easier looping */
 static const char *fkeys_info[] = {"F1 - Help", "F2 - Find",  "F3 - Users", "F4 - History", "F5 - Exit", NULL};
@@ -27,15 +27,13 @@ static const char *fkeys_info[] = {"F1 - Help", "F2 - Find",  "F3 - Users", "F4 
 enum {
 	NAME_PROMPT_HEIGHT = 4,
 	NAME_PROMPT_WIDTH  = 20,
-	//CHAT_HEIGHT        = 20,
-	//CHAT_WIDTH         = 80,
-	/*INPUT_CHAT_HEIGHT  = 3,
-	INPUT_CHAT_WIDTH   = 100,*/
+	BUF_LEN = 512,
 };
-info_t *chat_widget;
+
 
 int main()
 {
+	int client_socket = client_init("127.0.0.1", 7654);
 	init();
 	print_fkeys();
 	char name[20];
@@ -58,7 +56,7 @@ int main()
 	FreeWidget(name_prompt_widget, free_prompt);
 
 	//info_t *chat_widget = GInfoWidget("Chat", CHAT_HEIGHT, CHAT_WIDTH, chat_cords.y, chat_cords.x, border_default);
-	chat_widget = GInfoWidget("Chat", CHAT_HEIGHT, CHAT_WIDTH, chat_cords.y, chat_cords.x, border_default);
+	info_t *chat_widget = GInfoWidget("Chat", CHAT_HEIGHT, CHAT_WIDTH, chat_cords.y, chat_cords.x, border_default);
 	prompt_t *input_prompt = GPromptWidget(NULL, 255, INPUT_CHAT_HEIGHT, INPUT_CHAT_WIDTH, input_cords.y+CHAT_HEIGHT/2+(INPUT_CHAT_HEIGHT/2+1), input_cords.x, border_type2);
 
 	/* this is actually test. When not typing for 200(second parameter of wtimeout) it returns ERR(-1) if key not pressed within that delay.
@@ -70,28 +68,27 @@ int main()
 	 *    }
 	 * ```
 	*/
-	wtimeout(input_prompt->w, 200);
-	for (;;) {
-		char fmt_message_name[512]; /* in this variable I will use sprintf(fmt_message_name, "%s: %s", ->input, name). Then it will be send to server. */
+	wtimeout(input_prompt->w, 1);
+	char SERVER_ANSWER[BUF_LEN];
+	int read_server;
 
+	for (;;) {
+		memset(SERVER_ANSWER, 0, sizeof(SERVER_ANSWER));
+		char fmt_message_name[BUF_LEN]; /* in this variable I will use sprintf(fmt_message_name, "%s: %s", ->input, name). Then it will be send to server. */
 		input_prompt->read(input_prompt);
 		if (!input_prompt->input) {
-			/* function that uses select() and waits for server data */
-			struct timeval timeout;
-			timeout.tv_sec = 0;
-			timeout.tv_usec = 200;
-			select(4, NULL, NULL, NULL, &timeout);
+			read_server = listen_server(client_socket, SERVER_ANSWER, BUF_LEN);
+			if (read_server > 0) {
+				chat_widget->write(chat_widget, SERVER_ANSWER);
+			}
 			continue;
 		}
-		/* instead of client write to chat, here must be function that sends message
-		 * to server instead of ->write(). */
-		chat_widget->write(chat_widget, input_prompt->input, name);
 
-		/* save_history(str) must be in function that accepts message from server
-		 * then saves it to history, not on client! */
-		char *tmp = format_message_history(input_prompt->input, name);
-		save_history(tmp);
-		free(tmp);
+		if (input_prompt->input) {
+			sprintf(fmt_message_name, "%s: %s", name, input_prompt->input);
+		}
+
+		write_server(client_socket, fmt_message_name);
 
 		/* it should be always here either memory leak occurs */
 		if (input_prompt->input)
@@ -126,6 +123,7 @@ static void init()
 	keypad(stdscr, TRUE);
 	cbreak();
 	start_color();
+	zero_history();
 }
 
 static void tc_shutdown()
@@ -145,16 +143,4 @@ static void print_fkeys()
 		list++;
 	}
 	wmove(stdscr, 0, 0);
-}
-
-/* TODO add date to message (optional) */
-static char *format_message_history(char *msg, char *name)
-{
-	if (msg == NULL || name == NULL)
-		return NULL;
-	//char *date = cur_date();
-	//char *dest = malloc(strlen(msg)+strlen(name)+strlen(date)+1);
-	char *dest = malloc(strlen(msg)+strlen(name)+1);
-	sprintf(dest, "%s: %s", name, msg);
-	return dest;
 }

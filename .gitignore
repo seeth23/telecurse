@@ -1,4 +1,5 @@
 main
 tc
+server
 debug_tc
 *.txt

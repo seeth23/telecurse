@@ -4,3 +4,4 @@ server
 client
 *.txt
 src/net/*\.sh
+src/net/can/*

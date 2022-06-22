@@ -3,3 +3,4 @@ tc
 server
 debug_tc
 *.txt
+src/net/*\.sh

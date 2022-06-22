@@ -10,7 +10,6 @@
 #include <sys/select.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <fcntl.h>
 
 #define TRUE 1
 #define FALSE 0
@@ -47,11 +46,12 @@ void sigint_handler(int sig)
 	return;
 }
 
-int32_t max_fd(struct clients_d *t);
-void shutdown_clients(struct clients_d *t);
-void rem_fd(struct clients_d *t, int32_t fd);
-void add_fd(struct clients_d *t, int32_t fd);
+static int32_t max_fd(struct clients_d *t);
+static void shutdown_clients(struct clients_d *t);
+static void rem_fd(struct clients_d *t, int32_t fd);
+static void add_fd(struct clients_d *t, int32_t fd);
 static struct clients_d init_clients_d();
+static int32_t free_buffer(void *buf);
 
 int main(int argc, char **argv)
 {
@@ -106,7 +106,8 @@ int main(int argc, char **argv)
 	while (server_running) {
 		char server_buffer[buf_len];
 		memset(server_buffer, 0, sizeof(server_buffer));
-		int32_t max_d, fd, read_res, i;
+		int32_t max_d, read_res;
+		uint32_t i, fd;
 
 		fd_set readfds;
 		fd_set writefds;
@@ -114,12 +115,12 @@ int main(int argc, char **argv)
 		FD_ZERO(&readfds);
 		FD_ZERO(&writefds);
 
-		FD_SET(listenfd, &readfds);
+		FD_SET(listenfd, &readfds); /* listening fd always must be set */
 
 		max_d = client_fds.fd_count > 0 ? max_fd(&client_fds) : listenfd;
 
 		if (client_fds.fd_count > 0)
-			for (i = 0, fd = client_fds.fds[i]; i < max_clients; ++i, fd = client_fds.fds[i]) {
+			for (i = 0, fd = client_fds.fds[i]; i < max_d+1; ++i, fd = client_fds.fds[i]) {
 				if (!fd)
 					continue;
 				FD_SET(fd, &readfds);
@@ -147,14 +148,12 @@ int main(int argc, char **argv)
 
 		if (FD_ISSET(listenfd, &readfds)) { /* listenfd is ready to accept new client */
 			fd = accept(listenfd, NULL, NULL);
-			client_fds.fds[fd] = fd;
-			client_fds.fd_count++;
-			printf("%d connected\n", fd);
+			add_fd(&client_fds, fd);
 		}
 
 		/* this loop can be a part of a function with callback */
 		if (client_fds.fd_count > 0) {
-			for (i = 0, fd = client_fds.fds[i]; i < max_clients; ++i, fd = client_fds.fds[i]) {
+			for (i = 0, fd = client_fds.fds[i]; i < max_d+1; ++i, fd = client_fds.fds[i]) {
 				if (!fd)
 					continue;
 				if (FD_ISSET(fd, &readfds)) {
@@ -166,38 +165,44 @@ int main(int argc, char **argv)
 						continue;
 					} else if (read_res == -1) {
 						perror("read()");
-						exit(1);
-					}
-					if (client_fds.buffer[fd]) {
-						free(client_fds.buffer[fd]);
-						client_fds.buffer[fd] = NULL;
-					}
-					client_fds.buffer[fd] = malloc(read_res);
-					if (!client_fds.buffer[fd]) {
-						fprintf(stderr, "Failed to alloc client buffer\n");
 						continue;
 					}
-					strcpy(client_fds.buffer[fd], server_buffer);
-					//printf("%d:%s", fd, client_fds.buffer[fd]);
-					memset(server_buffer, 0, sizeof(server_buffer));
-				}
-
-				if (FD_ISSET(fd, &writefds)) {
-#if 1
-					if (client_fds.buffer[fd])
-						write(1, client_fds.buffer[fd], strlen(client_fds.buffer[fd]));
+#if 0
 					if (client_fds.buffer[fd]) {
 						free(client_fds.buffer[fd]);
 						client_fds.buffer[fd] = NULL;
 					}
 #endif
+					if (free_buffer(client_fds.buffer[fd]))
+						client_fds.buffer[fd] = NULL;
+
+					client_fds.buffer[fd] = malloc(read_res);
+					if (!client_fds.buffer[fd]) {
+						fprintf(stderr, "Failed to alloc client buffer\n");
+						continue;
+					}
+
+					strcpy(client_fds.buffer[fd], server_buffer);
+					memset(server_buffer, 0, sizeof(server_buffer));
+				}
+
+				if (FD_ISSET(fd, &writefds)) {
+					if (client_fds.buffer[fd])
+						write(fd, client_fds.buffer[fd], strlen(client_fds.buffer[fd]));
+#if 0
+					if (client_fds.buffer[fd]) {
+						free(client_fds.buffer[fd]);
+						client_fds.buffer[fd] = NULL;
+					}
+#endif
+					if (free_buffer(client_fds.buffer[fd]))
+						client_fds.buffer[fd] = NULL;
 				}
 			}
 		}
 	}
-
-	//shutdown_clients(&client_fds);
-	printf("exited forever loop\n");
+	shutdown_clients(&client_fds);
+	printf("ret\n");
 	return 0;
 }
 
@@ -208,10 +213,14 @@ void shutdown_clients(struct clients_d *t)
 	for (i = 0, fd = t->fds[i]; i < max_d+1; ++i, fd = t->fds[i]) {
 		if (!fd)
 			continue;
+#if 0
 		if (t->buffer[fd]) {
 			free(t->buffer[fd]);
 			t->buffer[fd] = NULL;
 		}
+#endif
+		if (free_buffer(t->buffer[fd]))
+			t->buffer[fd] = NULL;
 		shutdown(fd, SHUT_RDWR);
 		close(fd);
 	}
@@ -235,10 +244,14 @@ void rem_fd(struct clients_d *t, int32_t fd)
 	t->fds[fd] = 0;
 	t->fd_count--;
 	printf("%d disconnected\n", fd);
+#if 0
 	if (t->buffer[fd]) {
 		free(t->buffer[fd]);
 		t->buffer[fd] = NULL;
 	}
+#endif
+	if (free_buffer(t->buffer[fd]))
+		t->buffer[fd] = NULL;
 	shutdown(fd, SHUT_RDWR);
 	close(fd);
 }
@@ -260,4 +273,13 @@ static struct clients_d init_clients_d()
 	}
 	t.fd_count = 0;
 	return t;
+}
+
+int32_t free_buffer(void *buf)
+{
+	if (buf) {
+		free(buf);
+		return 1;
+	}
+	return 0;
 }

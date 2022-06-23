@@ -29,25 +29,32 @@ FLAGS=-Wall\
 			-g\
 
 SERVER_FLAGS=-Wall\
-							-g\
+						 -g\
 
-all: test_dir telecurse tcserver
+all: dir_dest telecurse tcserver
 
+.PHONY: clean
 clean:
 	@if [ -d "$(DEST)" ]; then \
-		rm -r "$(DEST)"
+		rm -r "$(DEST)"; \
+		echo "Removed $(DEST)/"; \
+	else \
+		echo "Nothing to clean"; \
 	fi
+
+.PHONY: install
 
 debug:
 	$(COMPILER) $(SOURCES) $(FLAGS) -D DEBUG -o $(DEST)/debug_tc
 
 telecurse:
-	@$(COMPILER) $(SOURCES) $(FLAGS) -o $(DEST)/tc; \
+	@$(COMPILER) $(SOURCES) $(FLAGS) -o $(DEST)/tc
 
 tcserver:
 	@$(COMPILER) $(SERVER_SOURCES) $(SERVER_FLAGS) -o $(DEST)/tcserver
 
-test_dir:
+dir_dest:
 	@if ! [ -d "$(DEST)" ]; then \
 		mkdir "$(DEST)"; \
+		echo "Created $(DEST)/"; \
 	fi

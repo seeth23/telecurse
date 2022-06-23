@@ -17,6 +17,7 @@ SOURCES=$(O)/main.c\
 	$(O)/history.c\
 	$(O)/misc.c\
 	$(O)/client.c\
+	$(O)/args.c\
 
 SERVER_SOURCES=$(N)/error.c\
 	 $(N)/server.c\
@@ -28,6 +29,8 @@ FLAGS=-Wall\
 	-lpanel\
 	-lncurses\
 	-g\
+
+DEBUG_FLAGS=-D DEBUG
 
 SERVER_FLAGS=-Wall\
 	-g\
@@ -52,8 +55,8 @@ install:
 
 .PHONY: debug
 debug: dest_dir debug_dir
-	@$(COMPILER) $(SOURCES) $(FLAGS) -D DEBUG -o $(DEBUG_DEST)/debug_tc
-	@$(COMPILER) $(SERVER_SOURCES) $(SERVER_FLAGS) -D DEBUG -o $(DEBUG_DEST)/debug_tcserver
+	@$(COMPILER) $(SOURCES) $(FLAGS) $(DEBUG_FLAGS) -o $(DEBUG_DEST)/debug_tc
+	@$(COMPILER) $(SERVER_SOURCES) $(SERVER_FLAGS) $(DEBUG_FLAGS) -o $(DEBUG_DEST)/debug_tcserver
 
 telecurse:
 	@$(COMPILER) $(SOURCES) $(FLAGS) -o $(DEST)/tc

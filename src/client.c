@@ -1,7 +1,5 @@
 #include "client.h"
 
-static char *format_message_history(const char *msg);
-
 int
 client_init(const char *ipaddr, int port)
 {
@@ -56,11 +54,6 @@ listen_server(int fd, char *buffer, int buf_len)
 		read_r = read(fd, buffer, buf_len);
 	}
 
-	if (read_r > 0) {
-		char *tmp = format_message_history(buffer);
-		save_history(tmp);
-		free(tmp);
-	}
 	return read_r;
 }
 
@@ -70,14 +63,4 @@ write_server(int fd, const char *str)
 	int written;
 	written = write(fd, str, strlen(str));
 	return written;
-}
-
-static char
-*format_message_history(const char *msg)
-{
-	if (msg == NULL)
-		return NULL;
-	char *dest = malloc(strlen(msg)+1);
-	strcpy(dest, msg);
-	return dest;
 }

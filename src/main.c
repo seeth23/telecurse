@@ -2,9 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <sys/socket.h>
-#include <sys/select.h>
-
 #include "pc_error.h"
 #include "tc_window.h"
 #include "types.h"
@@ -14,6 +11,14 @@
 #include "math/center.h"
 #include "history.h"
 #include "client.h"
+#include "args.h"
+
+enum {
+	NAME_PROMPT_HEIGHT = 4,
+	NAME_PROMPT_WIDTH  = 20,
+	BUF_LEN = 2048,
+	MAX_MSGS_PER_REQUEST = 40,
+};
 
 static const char *PROGNAME = "tc";
 
@@ -22,36 +27,11 @@ static void print_fkeys();
 static void tc_shutdown();
 static void init();
 static void usage();
+static size_t messages_count(const char *str, char buffers[MAX_MSGS_PER_REQUEST][BUF_LEN]);
+static char *format_message_history(const char *msg);
 
 /* must end up with NULL for easier looping */
 static const char *fkeys_info[] = {"F1 - Help", "F2 - Find",  "F3 - Users", "F4 - History", "F5 - Exit", NULL};
-
-enum {
-	NAME_PROMPT_HEIGHT = 4,
-	NAME_PROMPT_WIDTH  = 20,
-	BUF_LEN = 512,
-};
-
-#include <regex.h>
-void args_s(char **argv, opt_t *t)
-{
-	argv++;
-	const char *ipaddr = argv[0];
-	const char *port = argv[1];
-
-	regex_t re;
-	
-	if (regcomp(&re, "^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$", REG_NOSUB|REG_EXTENDED) != 0)
-		error_panic(stderr, "Failed to init regex\n");
-	
-	if (regexec(&re, ipaddr, (size_t) 0, NULL, 0) != 0)
-		error_panic(stderr, "Failed at regex\n");
-	
-	t->ipaddr = ipaddr;
-	t->port = atoi(port);
-	if (t->port <= 0 || t->port > 65535)
-		error_panic(stderr, "Wrong port\n");
-}
 
 int
 main(int argc, char **argv)
@@ -59,15 +39,14 @@ main(int argc, char **argv)
 	if (argc != 3) {
 		usage();
 	}
-
 	opt_t opt;
 	args_s(argv, &opt);
-
-	int client_socket = client_init(opt.ipaddr, opt.port);
 	init();
 
+	int client_socket = client_init(opt.ipaddr, opt.port);
+
 	print_fkeys();
-	char name[20];
+	char client_name[20];
 	centercords_t nameprompt_cords;
 	centercords_t chat_cords;
 	centercords_t input_cords;
@@ -83,49 +62,45 @@ main(int argc, char **argv)
 
 	prompt_t *name_prompt_widget = GPromptWidget("Enter name", 18, NAME_PROMPT_HEIGHT, NAME_PROMPT_WIDTH, nameprompt_cords.y, nameprompt_cords.x, border_type2);
 	name_prompt_widget->read(name_prompt_widget);
-	strcpy(name, name_prompt_widget->input);
+	strcpy(client_name, name_prompt_widget->input);
 	FreeWidget(name_prompt_widget, free_prompt);
 
-	//info_t *chat_widget = GInfoWidget("Chat", CHAT_HEIGHT, CHAT_WIDTH, chat_cords.y, chat_cords.x, border_default);
 	info_t *chat_widget = GInfoWidget("Chat", CHAT_HEIGHT, CHAT_WIDTH, chat_cords.y, chat_cords.x, border_default);
 	prompt_t *input_prompt = GPromptWidget(NULL, 255, INPUT_CHAT_HEIGHT, INPUT_CHAT_WIDTH, input_cords.y+CHAT_HEIGHT/2+(INPUT_CHAT_HEIGHT/2+1), input_cords.x, border_type2);
-
-	/* this is actually test. When not typing for 200(second parameter of wtimeout) it returns ERR(-1) if key not pressed within that delay.
-	 * Changed tc_wreadstr(src/input.c) a bit: I return NULL and in that time when client is not printing you can ask
-	 * server for data with, probably, select?? need to try it out.
-	 * P.S. changes are only made in input.c and wtimeout line. In input.c changes are:
-	 * ```if (t->ch == ERR && count == 0) {
-	 *       return NULL;
-	 *    }
-	 * ```
-	*/
-	wtimeout(input_prompt->w, 10);
 
 	char SERVER_ANSWER[BUF_LEN];
 	int read_server;
 
+	wtimeout(input_prompt->w, 10);
 	for (;;) {
 		memset(SERVER_ANSWER, 0, sizeof(SERVER_ANSWER));
 		char fmt_message_name[BUF_LEN]; /* in this variable I will use sprintf(fmt_message_name, "%s: %s", ->input, name). Then it will be send to server. */
 		input_prompt->read(input_prompt);
 		if (!input_prompt->input) {
 			read_server = listen_server(client_socket, SERVER_ANSWER, BUF_LEN);
+
 			if (read_server > 0) {
-				chat_widget->write(chat_widget, SERVER_ANSWER);
+				char messages[MAX_MSGS_PER_REQUEST][BUF_LEN];
+				size_t lines = messages_count(SERVER_ANSWER, messages);
+
+				for (size_t i = 0; i < lines; i++) {
+					chat_widget->write(chat_widget, messages[i]);
+					char *tmp = format_message_history(messages[i]);
+					save_history(tmp);
+					free(tmp);
+				}
 			}
 			continue;
 		}
 
 		if (input_prompt->input) {
-			sprintf(fmt_message_name, "%s: %s", name, input_prompt->input);
+			sprintf(fmt_message_name, "%s: %s", client_name, input_prompt->input);
 		}
 
 		write_server(client_socket, fmt_message_name);
 
-		/* it should be always here either memory leak occurs */
 		if (input_prompt->input)
 			free(input_prompt->input);
-		/* the same as rerender_window() */
 		rerender_window(input_prompt->w, input_prompt->s->border_type);
 	}
 
@@ -187,4 +162,45 @@ usage()
 	fprintf(stderr, "usage:  %s <ip> <port>\n", PROGNAME);
 	fprintf(stderr, "\tport <= 65535\n");
 	exit(EXIT_FAILURE);
+}
+
+static size_t
+messages_count(const char *str, char buffers[MAX_MSGS_PER_REQUEST][BUF_LEN])
+{
+	const char *ptr = str;
+	memset(buffers, 0, MAX_MSGS_PER_REQUEST*BUF_LEN);
+	size_t count = 0, i, j;
+	while (*ptr) {
+		if (*ptr == '\n') {
+			count++;
+		}
+		ptr++;
+	}
+	ptr = str;
+	i = 0;
+	j = 0;
+	while (*ptr) {
+		if (*ptr == '\n') {
+			buffers[i][j] = 0;
+			i++;
+			j = 0;
+		} else {
+			buffers[i][j] = *ptr;
+			j++;
+		}
+		ptr++;
+	}
+	return count;
+}
+
+static char *
+format_message_history(const char *msg)
+{
+	if (msg == NULL)
+		error_panic(stderr, "Source msg is NULL. Can't format\n");
+	char *dest = malloc(strlen(msg)+1);
+	if (!dest)
+		error_panic(stderr, "Could not allocate memory for history buffer\n");
+	strcpy(dest, msg);
+	return dest;
 }

@@ -46,7 +46,8 @@ main(int argc, char **argv)
 	signal(SIGINT, sigint_handler);
 
 	if (argc != 2) {
-		fprintf(stderr, "usage: %s port\n", argv[0]);
+		fprintf(stderr, "usage:  %s port\n", argv[0]);
+		fprintf(stderr, "\tport <= 65535\n");
 		exit(EXIT_FAILURE);
 	}
 	int res;
@@ -159,7 +160,7 @@ main(int argc, char **argv)
 						error_panic(stderr, "Failed to alloc client buffer\n");
 
 					parse_name(server_buffer, &client_fds, fd);
-					sprintf(client_fds.buffer[fd], "%s", server_buffer);
+					sprintf(client_fds.buffer[fd], "%s\n", server_buffer);
 					memset(server_buffer, 0, sizeof(server_buffer));
 				}
 

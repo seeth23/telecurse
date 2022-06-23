@@ -156,8 +156,7 @@ write_infow(info_t *t, const char *str)
 	t->msg_num++;
 	scrollok(t->w, TRUE);
 	wmove(t->w, t->current_y++, t->current_x);
-	//wprintw(t->w, "%s: %s\n ", name, str);
-	wprintw(t->w, "%s ", str);
+	wprintw(t->w, "%s\n ", str);
 	border_window(t->w, t->s->border_type);
 	wrefresh(t->w);
 }

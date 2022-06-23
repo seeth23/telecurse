@@ -3,7 +3,8 @@
 static char *history[MAX_HISTORY];
 static ssize_t ipos = 0;
 
-void zero_history()
+void
+zero_history()
 {
 	int i;
 	for (i = 0; i < MAX_HISTORY; i++) {
@@ -11,7 +12,8 @@ void zero_history()
 	}
 }
 
-static void alloc_history(size_t len)
+static void
+alloc_history(size_t len)
 {
 	/*if (history[ipos]) {
 		free(history[ipos]);
@@ -21,12 +23,14 @@ static void alloc_history(size_t len)
 	if (!history[ipos]) error_panic(stderr, "Could not allocate memory for history pointer\n");
 }
 
-int history_size()
+int
+history_size()
 {
 	return ipos-1;
 }
 
-int save_history(const char *msg)
+int
+save_history(const char *msg)
 {
 	if (!msg)
 		return -1;
@@ -38,12 +42,14 @@ int save_history(const char *msg)
 	return 0;
 }
 
-char **get_history()
+char **
+get_history()
 {
 	return history;
 }
 
-void free_history()
+void
+free_history()
 {
 	while (ipos >= 0) {
 		if (history[ipos])
@@ -52,4 +58,3 @@ void free_history()
 	}
 	ipos = 0;
 }
-

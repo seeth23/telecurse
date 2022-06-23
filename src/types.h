@@ -8,8 +8,6 @@ enum border_type {
 	border_type3,
 };
 
-//extern enum border_type t;
-
 enum free_type {
 	free_prompt,
 	free_menu,
@@ -19,5 +17,10 @@ enum free_type {
 typedef struct CenterCoordinates {
 	int y, x;
 } centercords_t;
+
+typedef struct ConnectOptions {
+	const char *ipaddr;
+	unsigned short port;
+} opt_t;
 
 #endif

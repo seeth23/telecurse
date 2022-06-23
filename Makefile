@@ -18,15 +18,36 @@ SOURCES=$(O)/main.c\
 				$(O)/misc.c\
 				$(O)/client.c\
 
-DEST=tc
+SERVER_SOURCES=$(N)/error.c\
+							 $(N)/server.c\
+
+DEST=bins
+
 FLAGS=-Wall\
 			-lpanel\
 			-lncurses\
 			-g\
 
-all:
-	$(COMPILER) $(SOURCES) $(FLAGS) -o $(DEST)
+SERVER_FLAGS=-Wall\
+							-g\
+
+all: test_dir telecurse tcserver
+
+clean:
+	@if [ -d "$(DEST)" ]; then \
+		rm -r "$(DEST)"
+	fi
 
 debug:
-	$(COMPILER) $(SOURCES) $(FLAGS) -D DEBUG -o debug_$(DEST)
+	$(COMPILER) $(SOURCES) $(FLAGS) -D DEBUG -o $(DEST)/debug_tc
 
+telecurse:
+	@$(COMPILER) $(SOURCES) $(FLAGS) -o $(DEST)/tc; \
+
+tcserver:
+	@$(COMPILER) $(SERVER_SOURCES) $(SERVER_FLAGS) -o $(DEST)/tcserver
+
+test_dir:
+	@if ! [ -d "$(DEST)" ]; then \
+		mkdir "$(DEST)"; \
+	fi

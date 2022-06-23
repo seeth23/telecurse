@@ -15,11 +15,13 @@
 #include "history.h"
 #include "client.h"
 
-static void rerender_window(WINDOW *w, enum border_type);
+static const char *PROGNAME = "tc";
 
+static void rerender_window(WINDOW *w, enum border_type);
 static void print_fkeys();
 static void tc_shutdown();
 static void init();
+static void usage();
 
 /* must end up with NULL for easier looping */
 static const char *fkeys_info[] = {"F1 - Help", "F2 - Find",  "F3 - Users", "F4 - History", "F5 - Exit", NULL};
@@ -30,11 +32,40 @@ enum {
 	BUF_LEN = 512,
 };
 
-
-int main()
+#include <regex.h>
+void args_s(char **argv, opt_t *t)
 {
-	int client_socket = client_init("127.0.0.1", 7654);
+	argv++;
+	const char *ipaddr = argv[0];
+	const char *port = argv[1];
+
+	regex_t re;
+	
+	if (regcomp(&re, "^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$", REG_NOSUB|REG_EXTENDED) != 0)
+		error_panic(stderr, "Failed to init regex\n");
+	
+	if (regexec(&re, ipaddr, (size_t) 0, NULL, 0) != 0)
+		error_panic(stderr, "Failed at regex\n");
+	
+	t->ipaddr = ipaddr;
+	t->port = atoi(port);
+	if (t->port <= 0 || t->port > 65535)
+		error_panic(stderr, "Wrong port\n");
+}
+
+int
+main(int argc, char **argv)
+{
+	if (argc != 3) {
+		usage();
+	}
+
+	opt_t opt;
+	args_s(argv, &opt);
+
+	int client_socket = client_init(opt.ipaddr, opt.port);
 	init();
+
 	print_fkeys();
 	char name[20];
 	centercords_t nameprompt_cords;
@@ -68,7 +99,8 @@ int main()
 	 *    }
 	 * ```
 	*/
-	wtimeout(input_prompt->w, 1);
+	wtimeout(input_prompt->w, 10);
+
 	char SERVER_ANSWER[BUF_LEN];
 	int read_server;
 
@@ -109,7 +141,8 @@ int main()
 	return 0;
 }
 
-static void rerender_window(WINDOW *w, enum border_type bt)
+static void
+rerender_window(WINDOW *w, enum border_type bt)
 {
 	wclear(w);
 	box(w, 0, 0);
@@ -117,7 +150,8 @@ static void rerender_window(WINDOW *w, enum border_type bt)
 	wrefresh(w);
 }
 
-static void init()
+static void
+init()
 {
 	initscr();
 	keypad(stdscr, TRUE);
@@ -126,12 +160,14 @@ static void init()
 	zero_history();
 }
 
-static void tc_shutdown()
+static void
+tc_shutdown()
 {
 	endwin();
 }
 
-static void print_fkeys()
+static void
+print_fkeys()
 {
 	const char **list = fkeys_info;
 	wmove(stdscr, 0, 0);
@@ -143,4 +179,12 @@ static void print_fkeys()
 		list++;
 	}
 	wmove(stdscr, 0, 0);
+}
+
+static void
+usage()
+{
+	fprintf(stderr, "usage:  %s <ip> <port>\n", PROGNAME);
+	fprintf(stderr, "\tport <= 65535\n");
+	exit(EXIT_FAILURE);
 }

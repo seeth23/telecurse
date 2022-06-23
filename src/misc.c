@@ -2,7 +2,8 @@
 
 //static const char *days[] = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"};
 
-char *cur_date()
+char *
+cur_date()
 {
 	time_t t = time(NULL);
 	struct tm *time = localtime(&t);

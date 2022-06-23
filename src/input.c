@@ -1,6 +1,7 @@
 #include "input.h"
 
-winput_h *input_init(WINDOW *win, size_t len, int starty, int startx)
+winput_h *
+input_init(WINDOW *win, size_t len, int starty, int startx)
 {
 	if (len <= 0)
 		error_panic(stderr, "len cannot be <= 0 for winput_h!\n");
@@ -22,7 +23,8 @@ winput_h *input_init(WINDOW *win, size_t len, int starty, int startx)
 	return i;
 }
 
-void free_winput(winput_h *t)
+void
+free_winput(winput_h *t)
 {
 	if (!t)
 		return;
@@ -31,22 +33,22 @@ void free_winput(winput_h *t)
 	free(t);
 }
 
-/* TODO Super Global Function for input parsing */
-/* -------------------------------------- */
-
-static int tc_isascii(int ch)
+static int
+tc_isascii(int ch)
 {
 	return (ch >= 33 && ch <= 127) ? TRUE : FALSE;
 }
 
-static void tc_putch(winput_h *t)
+static void
+tc_putch(winput_h *t)
 {
 	t->curx++;
 	t->str[t->current_pos++] = t->ch;
 	waddch(t->w, t->str[t->current_pos-1]);
 }
 
-static void tc_delch(winput_h *t)
+static void
+tc_delch(winput_h *t)
 {
 	if (t->current_pos > 0) {
 		wmove(t->w, t->cury, --t->curx);
@@ -56,24 +58,28 @@ static void tc_delch(winput_h *t)
 	}
 }
 
-static int tc_isdelete(int ch)
+static int
+tc_isdelete(int ch)
 {
 	return (ch == KB_BACKSPACE || ch == KEY_BACKSPACE || ch == 127) ? TRUE : FALSE;
 }
 
-static int tc_buf_overflow(winput_h *t)
+static int
+tc_buf_overflow(winput_h *t)
 {
 	return t->current_pos >= t->str_len ? TRUE : FALSE;
 }
 
-static int tc_isspace(int ch)
+static int
+tc_isspace(int ch)
 {
 	return ch == ' ' ? TRUE : FALSE;
 }
 
 /* void (*filter)(int ch) callback checks if ch is f1-f12 key returns nothing
  * because it will handle if e.g. f5 for quit is pressed so no need to return */
-char *tc_wreadstr(winput_h *t, void (*filter)(int ch))
+char *
+tc_wreadstr(winput_h *t, void (*filter)(int ch))
 {
 	int isascii;
 	int isdelete;

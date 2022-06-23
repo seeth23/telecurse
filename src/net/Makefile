@@ -1,9 +1,11 @@
-all: client-to-delete
-	gcc -Wall -g -o server server.c
+COMPILER=gcc
+FLAGS=-Wall -g
+OUTPUT=tcserver
+SRC=server.c\
+		error.c
+
+all:
+	$(COMPILER) $(FLAGS) -o $(OUTPUT) $(SRC)
 
 debug:
-	gcc -Wall -g -D debug -o server server.c
-
-
-client-to-delete:
-	gcc -Wall -g -o client client.c
+	$(COMPILER) $(FLAGS) -D DEBUG -o $(OUTPUT) $(SRC)

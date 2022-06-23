@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 
 #include "../net_types.h"
+#include "error.h"
 
 #define TRUE 1
 #define FALSE 0
@@ -39,7 +40,8 @@ static struct clients_d init_clients_d();
 static int32_t free_buffer(void *buf);
 static void parse_name(const char *str, struct clients_d *t, int fd);
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	signal(SIGINT, sigint_handler);
 
@@ -49,10 +51,8 @@ int main(int argc, char **argv)
 	}
 	int res;
 
-	if (atoi(argv[1]) > 65535 || atoi(argv[1]) <= 0) {
-		fprintf(stderr, "Invalid port\n");
-		exit(EXIT_FAILURE);
-	}
+	if (atoi(argv[1]) > 65535 || atoi(argv[1]) <= 0)
+		error_panic(stderr, "Invalid port\n");
 
 	u_int16_t port = atoi(argv[1]);
 
@@ -88,12 +88,12 @@ int main(int argc, char **argv)
 
 	/* struct for client descriptors and clients count */
 	struct clients_d client_fds = init_clients_d();
-
 	while (server_running) {
 		char server_buffer[buf_len];
 		memset(server_buffer, 0, sizeof(server_buffer));
 		int32_t max_d, read_res;
-		uint32_t i, fd;
+		size_t i;
+		int32_t fd;
 
 		fd_set readfds;
 		fd_set writefds;
@@ -118,19 +118,14 @@ int main(int argc, char **argv)
 		/* handle return value of select() */
 		if (res == select_err) {
 			if (errno == EINTR) {
-				//perror("EINTR");
 				continue;
 			}
 			perror("select()");
 			continue;
-		} else if (res == select_timeout) {
+		} else if (res == select_timeout) { /* unreachable */
 			printf("timeout expired\n");
 			continue;
 		}
-#if DEBUG
-		else
-			printf("%d descriptors were affected\n", res);
-#endif
 
 		if (FD_ISSET(listenfd, &readfds)) { /* listenfd is ready to accept new client */
 			fd = accept(listenfd, NULL, NULL);
@@ -160,10 +155,8 @@ int main(int argc, char **argv)
 					}
 
 					client_fds.buffer[fd] = malloc(read_res);
-					if (!client_fds.buffer[fd]) {
-						fprintf(stderr, "Failed to alloc client buffer\n");
-						continue;
-					}
+					if (!client_fds.buffer[fd])
+						error_panic(stderr, "Failed to alloc client buffer\n");
 
 					parse_name(server_buffer, &client_fds, fd);
 					sprintf(client_fds.buffer[fd], "%s", server_buffer);
@@ -185,14 +178,16 @@ int main(int argc, char **argv)
 		}
 	}
 	shutdown_clients(&client_fds);
-	printf("ret\n");
+	printf("\nret\n");
 	return 0;
 }
 
-static void shutdown_clients(struct clients_d *t)
+static void
+shutdown_clients(struct clients_d *t)
 {
 	int32_t max_d = max_fd(t);
-	int32_t i, fd;
+	size_t i;
+	int32_t fd;
 	for (i = 0, fd = t->fds[i]; i < max_d+1; ++i, fd = t->fds[i]) {
 		if (fd == invalid_socket)
 			continue;
@@ -205,9 +200,10 @@ static void shutdown_clients(struct clients_d *t)
 	}
 }
 
-static int32_t max_fd(struct clients_d *t)
+static int32_t
+max_fd(struct clients_d *t)
 {
-	int32_t i;
+	size_t i;
 	int32_t max = 0;
 	for (i=0; i < max_clients; i++) {
 		if (t->fds[i] == 0)
@@ -218,42 +214,45 @@ static int32_t max_fd(struct clients_d *t)
 	return max;
 }
 
-static void rem_fd(struct clients_d *t, int32_t fd)
+static void
+rem_fd(struct clients_d *t, int32_t fd)
 {
 	t->fds[fd] = 0;
 	t->fd_count--;
-	printf("%s disconnected\n", t->name[fd]);
+	strlen(t->name[fd]) > 0 ? printf("%s disconnected\n", t->name[fd]) : printf("%d disconnected\n", fd);
 
 	if (free_buffer(t->buffer[fd]))
 		t->buffer[fd] = NULL;
-	
+
 	shutdown(fd, SHUT_RDWR);
 	close(fd);
 }
 
-static void add_fd(struct clients_d *t, int32_t fd)
+static void
+add_fd(struct clients_d *t, int32_t fd)
 {
 	t->fds[fd] = fd;
 	t->fd_count++;
 	printf("%d connected\n", fd);
 }
 
-static struct clients_d init_clients_d()
+static struct clients_d
+init_clients_d()
 {
 	struct clients_d t;
+	size_t i;
 	memset(t.fds, 0, sizeof(t.fds));
 	memset(t.name, 0, sizeof(t.name));
-
 	/* setting all pointers to client's buffer to NULL */
-	for (int i = 0; i < max_clients; i++) {
+	for (i = 0; i < max_clients; i++) {
 		t.buffer[i] = NULL;
 	}
-
 	t.fd_count = 0;
 	return t;
 }
 
-static int32_t free_buffer(void *buf)
+static int32_t
+free_buffer(void *buf)
 {
 	if (buf) {
 		free(buf);
@@ -262,9 +261,10 @@ static int32_t free_buffer(void *buf)
 	return 0;
 }
 
-static void parse_name(const char *str, struct clients_d *t, int fd)
+static void
+parse_name(const char *str, struct clients_d *t, int fd)
 {
-	int i = 0;
+	size_t i = 0;
 	while (*str != ':') {
 		t->name[fd][i] = *str++;
 		i++;

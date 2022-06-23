@@ -1,7 +1,8 @@
 #include "tc_window.h"
 #include "pc_error.h"
 
-WINDOW *border_window(WINDOW *w, enum border_type type)
+WINDOW *
+border_window(WINDOW *w, enum border_type type)
 {
 	switch (type) {
 		case border_default:
@@ -23,7 +24,8 @@ WINDOW *border_window(WINDOW *w, enum border_type type)
 	return w;
 }
 
-WINDOW *alloc_win(int h, int w, int y, int x, enum border_type type)
+WINDOW *
+alloc_win(int h, int w, int y, int x, enum border_type type)
 {
 	WINDOW *win;
 	win = newwin(h, w, y, x);
@@ -39,14 +41,8 @@ WINDOW *alloc_win(int h, int w, int y, int x, enum border_type type)
 	return win;
 }
 
-#if 0
-int write_window(WINDOW *w)
-{
-	return 0;
-}
-#endif
-
-void clr_win(WINDOW *w)
+void
+clr_win(WINDOW *w)
 {
 	if (w) {
 		wclear(w);

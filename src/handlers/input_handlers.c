@@ -6,7 +6,8 @@
 #include "../types.h"
 #include "../history.h"
 
-static void quit_menu_handle(int i)
+static void
+quit_menu_handle(int i)
 {
 	switch (i) {
 		case 0:
@@ -23,7 +24,8 @@ enum {
 	MENU_WIDTH  = 10,
 };
 
-static void clear_lines(info_t *t)
+static void
+clear_lines(info_t *t)
 {
 	int i, j;
 	for (i = 1; i < t->s->height-1; i++) {
@@ -33,7 +35,8 @@ static void clear_lines(info_t *t)
 	}
 }
 
-static void write_page_history(info_t *t, const char *msg)
+static void
+write_page_history(info_t *t, const char *msg)
 {
 	t->msg_num++;
 	mvwprintw(t->w, 0, 1, "%s", t->title);
@@ -41,7 +44,8 @@ static void write_page_history(info_t *t, const char *msg)
 	wrefresh(t->w);
 }
 
-void handle_function_keys(int ch)
+void
+handle_function_keys(int ch)
 {
 	const int maxy = stdscr->_maxy;
 	const int maxx = stdscr->_maxx;

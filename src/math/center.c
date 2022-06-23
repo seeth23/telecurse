@@ -1,7 +1,7 @@
 #include "center.h"
 
-
-void center_cord(int height, int width, int *y, int *x)
+void
+center_cord(int height, int width, int *y, int *x)
 {
 	int term_maxy, term_maxx;
 	getmaxyx(stdscr, term_maxy, term_maxx);

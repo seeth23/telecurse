@@ -6,7 +6,8 @@
 // TODO make another .c file for 'methods'
 // TODO make *FUNCTION* for printing horizontal list of f1-f12 actions on top of the program
 
-static window_t *GInitSz(int height, int width, int y, int x, enum border_type bt)
+static window_t *
+GInitSz(int height, int width, int y, int x, enum border_type bt)
 {
 	window_t *t = malloc(sizeof(window_t));
 	if (!t) {
@@ -22,14 +23,16 @@ static window_t *GInitSz(int height, int width, int y, int x, enum border_type b
 
 /* TODO make separate file for 'callbacks' which I will include then */
 
-static void read_prompt(prompt_t *t)
+static void
+read_prompt(prompt_t *t)
 {
 	winput_h *winput = input_init(t->w, t->ans_size, 1, 1);
 	t->input = tc_wreadstr(winput, handle_function_keys);
 	free_winput(winput);
 }
 
-static void render_menu(menu_t *t)
+static void
+render_menu(menu_t *t)
 {
 	const char **list = t->options;
 	size_t line = 0;
@@ -45,7 +48,8 @@ static void render_menu(menu_t *t)
 	wrefresh(t->w);
 }
 
-static void choose_option(menu_t *t, void (*handler)(int index))
+static void
+choose_option(menu_t *t, void (*handler)(int index))
 {
 	int ch;
 	int render = FALSE;
@@ -78,7 +82,8 @@ static void choose_option(menu_t *t, void (*handler)(int index))
 	}
 }
 
-prompt_t *GPromptWidget(
+prompt_t *
+GPromptWidget(
 		const char *str,
 		size_t str_len,
 		int height,
@@ -113,7 +118,8 @@ prompt_t *GPromptWidget(
 	return t;
 }
 
-menu_t *GMenuWidget(
+menu_t *
+GMenuWidget(
 		const char **opt,
 		const char *msg,
 		size_t opt_size,
@@ -144,7 +150,8 @@ menu_t *GMenuWidget(
 	return t;
 }
 
-static void write_infow(info_t *t, const char *str)
+static void
+write_infow(info_t *t, const char *str)
 {
 	t->msg_num++;
 	scrollok(t->w, TRUE);
@@ -155,7 +162,8 @@ static void write_infow(info_t *t, const char *str)
 	wrefresh(t->w);
 }
 
-info_t *GInfoWidget(
+info_t *
+GInfoWidget(
 		const char *window_name,
 		int height,
 		int width,
@@ -184,13 +192,15 @@ info_t *GInfoWidget(
 	return t;
 }
 
-static void tc_upd_pan()
+static void
+tc_upd_pan()
 {
 	update_panels();
 	doupdate();
 }
 
-void FreeWidget(void *widget, enum free_type t)
+void
+FreeWidget(void *widget, enum free_type t)
 {
 	switch(t) {
 		case free_menu: {

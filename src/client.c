@@ -2,7 +2,8 @@
 
 static char *format_message_history(const char *msg);
 
-int client_init(const char *ipaddr, int port)
+int
+client_init(const char *ipaddr, int port)
 {
 	int fd, res;
 
@@ -24,7 +25,8 @@ int client_init(const char *ipaddr, int port)
 	return fd;
 }
 
-int listen_server(int fd, char *buffer, int buf_len)
+int
+listen_server(int fd, char *buffer, int buf_len)
 {
 	fd_set readfd;
 	int max_d = fd;
@@ -62,14 +64,16 @@ int listen_server(int fd, char *buffer, int buf_len)
 	return read_r;
 }
 
-int write_server(int fd, const char *str)
+int
+write_server(int fd, const char *str)
 {
 	int written;
 	written = write(fd, str, strlen(str));
 	return written;
 }
 
-static char *format_message_history(const char *msg)
+static char
+*format_message_history(const char *msg)
 {
 	if (msg == NULL)
 		return NULL;

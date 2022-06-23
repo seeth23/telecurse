@@ -34,7 +34,7 @@ SERVER_FLAGS=-Wall\
 
 all: dest_dir telecurse tcserver
 
-PHONY: clean
+.PHONY: clean
 clean:
 	@if [ -d "$(DEBUG_DEST)" ]; then \
 		rm -r "$(DEBUG_DEST)"; \

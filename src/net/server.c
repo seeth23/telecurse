@@ -39,22 +39,21 @@ static void add_fd(struct clients_d *t, int32_t fd);
 static struct clients_d init_clients_d();
 static int32_t free_buffer(void *buf);
 static void parse_name(const char *str, struct clients_d *t, int fd);
+static void print_online(struct clients_d *t);
 
 int
 main(int argc, char **argv)
 {
-	signal(SIGINT, sigint_handler);
-
 	if (argc != 2) {
 		fprintf(stderr, "usage:  %s port\n", argv[0]);
 		fprintf(stderr, "\tport <= 65535\n");
 		exit(EXIT_FAILURE);
 	}
-	int res;
 
+	signal(SIGINT, sigint_handler);
+	int res;
 	if (atoi(argv[1]) > 65535 || atoi(argv[1]) <= 0)
 		error_panic(stderr, "Invalid port\n");
-
 	u_int16_t port = atoi(argv[1]);
 
 	struct sockaddr_in addr;
@@ -107,7 +106,7 @@ main(int argc, char **argv)
 		max_d = client_fds.fd_count > 0 ? max_fd(&client_fds) : listenfd;
 
 		if (client_fds.fd_count > 0)
-			for (i = 0, fd = client_fds.fds[i]; i < max_d+1; ++i, fd = client_fds.fds[i]) {
+			for (i=0, fd=client_fds.fds[i]; i<max_d+1; ++i, fd=client_fds.fds[i]) {
 				if (fd == invalid_socket)
 					continue;
 				FD_SET(fd, &readfds);
@@ -136,9 +135,10 @@ main(int argc, char **argv)
 		/* this loop can be a part of a function with callback */
 		/* loop for checking every client socket for ready IO */
 		if (client_fds.fd_count > 0) {
-			for (i = 0, fd = client_fds.fds[i]; i < max_d+1; ++i, fd = client_fds.fds[i]) {
+			for (i=0, fd=client_fds.fds[i]; i<max_d+1; ++i, fd=client_fds.fds[i]) {
 				if (fd == invalid_socket)
 					continue;
+
 				if (FD_ISSET(fd, &readfds)) { /* client answer is ready to be handled */
 					read_res = read(fd, server_buffer, sizeof(server_buffer));
 					server_buffer[read_res] = 0;
@@ -161,7 +161,6 @@ main(int argc, char **argv)
 
 					parse_name(server_buffer, &client_fds, fd);
 					sprintf(client_fds.buffer[fd], "%s\n", server_buffer);
-					memset(server_buffer, 0, sizeof(server_buffer));
 				}
 
 				if (FD_ISSET(fd, &writefds)) {
@@ -189,7 +188,8 @@ shutdown_clients(struct clients_d *t)
 	int32_t max_d = max_fd(t);
 	size_t i;
 	int32_t fd;
-	for (i = 0, fd = t->fds[i]; i < max_d+1; ++i, fd = t->fds[i]) {
+	
+	for (i=0, fd=t->fds[i]; i<max_d+1; ++i, fd=t->fds[i]) {
 		if (fd == invalid_socket)
 			continue;
 
@@ -206,7 +206,7 @@ max_fd(struct clients_d *t)
 {
 	size_t i;
 	int32_t max = 0;
-	for (i=0; i < max_clients; i++) {
+	for (i=0;i<max_clients;i++) {
 		if (t->fds[i] == 0)
 			continue;
 		if (t->fds[i] > max)
@@ -219,22 +219,32 @@ static void
 rem_fd(struct clients_d *t, int32_t fd)
 {
 	t->fds[fd] = 0;
-	t->fd_count--;
+	if (t->fd_count>0)
+		t->fd_count--;
+	else
+		error_panic(stderr, "Index out of bound in counter\n");
+
 	strlen(t->name[fd]) > 0 ? printf("%s disconnected\n", t->name[fd]) : printf("%d disconnected\n", fd);
 
 	if (free_buffer(t->buffer[fd]))
 		t->buffer[fd] = NULL;
 
+	memset(t->name[fd], 0, sizeof(t->name[fd]));
+
 	shutdown(fd, SHUT_RDWR);
 	close(fd);
+	print_online(t);
 }
 
 static void
 add_fd(struct clients_d *t, int32_t fd)
 {
 	t->fds[fd] = fd;
-	t->fd_count++;
-	printf("%d connected\n", fd);
+	if (t->fd_count<max_clients) {
+		t->fd_count++;
+		printf("%d connected\n", fd);
+		print_online(t);
+	}
 }
 
 static struct clients_d
@@ -244,10 +254,12 @@ init_clients_d()
 	size_t i;
 	memset(t.fds, 0, sizeof(t.fds));
 	memset(t.name, 0, sizeof(t.name));
+
 	/* setting all pointers to client's buffer to NULL */
-	for (i = 0; i < max_clients; i++) {
+	for (i=0; i<max_clients; i++) {
 		t.buffer[i] = NULL;
 	}
+
 	t.fd_count = 0;
 	return t;
 }
@@ -267,8 +279,22 @@ parse_name(const char *str, struct clients_d *t, int fd)
 {
 	size_t i = 0;
 	while (*str != ':') {
-		t->name[fd][i] = *str++;
-		i++;
+		t->name[fd][i++] = *str++;
 	}
 	t->name[fd][i] = 0;
+}
+
+#if 0
+static char **
+get_client_names()
+{
+
+	return NULL;
+}
+#endif
+
+static void
+print_online(struct clients_d *t)
+{
+	printf("current online: %d/%d\n", t->fd_count, max_clients);
 }

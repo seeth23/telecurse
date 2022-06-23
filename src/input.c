@@ -76,6 +76,20 @@ tc_isspace(int ch)
 	return ch == ' ' ? TRUE : FALSE;
 }
 
+static int
+tc_countspaces_row(winput_h *t)
+{
+	int count = 0;
+	size_t i;
+	for (i = 0; i<t->current_pos; i++) {
+		if (t->str[i] == ' ') {
+			count++;
+		} else
+			count = 0;
+	}
+	return count;
+}
+
 /* void (*filter)(int ch) callback checks if ch is f1-f12 key returns nothing
  * because it will handle if e.g. f5 for quit is pressed so no need to return */
 char *
@@ -84,12 +98,12 @@ tc_wreadstr(winput_h *t, void (*filter)(int ch))
 	int isascii;
 	int isdelete;
 	int isspace;
+	int count = 0;
 	if (!t) {
 		error_panic(stderr, "winput_h cannot be (null)\n");
 	}
 	noecho();
 	wmove(t->w, t->cury, t->curx);
-	int count = 0;
 	while ((t->ch = wgetch(t->w))) {
 		if (t->ch == ERR && count == 0) {
 			return NULL;
@@ -97,7 +111,8 @@ tc_wreadstr(winput_h *t, void (*filter)(int ch))
 		if (t->ch == '\n') {
 			if (count == 0)
 				continue;
-			else break;
+			else
+				break;
 		}
 		/* filter can be NULL */
 		if (filter)
@@ -111,6 +126,9 @@ tc_wreadstr(winput_h *t, void (*filter)(int ch))
 		}
 		isspace = tc_isspace(t->ch);
 		isascii = tc_isascii(t->ch);
+		if ((isspace && tc_countspaces_row(t) >= 1) || (isspace && count == 0)) {
+			continue;
+		}
 		if (isascii || isspace) {
 			if (tc_buf_overflow(t))
 				continue;
@@ -119,7 +137,6 @@ tc_wreadstr(winput_h *t, void (*filter)(int ch))
 				count++;
 		} else /* if !isascii then continue */
 			continue;
-		refresh();
 	}
 	t->str[t->current_pos] = '\0';
 	return t->str;

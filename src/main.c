@@ -41,11 +41,11 @@ main(int argc, char **argv)
 	}
 	opt_t opt;
 	args_s(argv, &opt);
-	init();
-
 	int client_socket = client_init(opt.ipaddr, opt.port);
 
+	init();
 	print_fkeys();
+
 	char client_name[20];
 	centercords_t nameprompt_cords;
 	centercords_t chat_cords;
@@ -56,35 +56,71 @@ main(int argc, char **argv)
 	const int INPUT_CHAT_HEIGHT = 3;
 	const int INPUT_CHAT_WIDTH = stdscr->_maxx/2;
 
-	center_cord(NAME_PROMPT_HEIGHT, NAME_PROMPT_WIDTH, &nameprompt_cords.y, &nameprompt_cords.x);
-	center_cord(CHAT_HEIGHT, CHAT_WIDTH, &chat_cords.y, &chat_cords.x);
-	center_cord(INPUT_CHAT_HEIGHT, INPUT_CHAT_WIDTH, &input_cords.y, &input_cords.x);
+	center_cord(
+			NAME_PROMPT_HEIGHT,
+			NAME_PROMPT_WIDTH,
+			&nameprompt_cords.y,
+			&nameprompt_cords.x);
 
-	prompt_t *name_prompt_widget = GPromptWidget("Enter name", 18, NAME_PROMPT_HEIGHT, NAME_PROMPT_WIDTH, nameprompt_cords.y, nameprompt_cords.x, border_type2);
+	center_cord(
+			CHAT_HEIGHT,
+			CHAT_WIDTH,
+			&chat_cords.y,
+			&chat_cords.x);
+
+	center_cord(
+			INPUT_CHAT_HEIGHT,
+			INPUT_CHAT_WIDTH,
+			&input_cords.y,
+			&input_cords.x);
+
+	prompt_t *name_prompt_widget = GPromptWidget(
+			"Enter name",
+			18,
+			NAME_PROMPT_HEIGHT,
+			NAME_PROMPT_WIDTH,
+			nameprompt_cords.y,
+			nameprompt_cords.x,
+			border_type2);
+
 	name_prompt_widget->read(name_prompt_widget);
 	strcpy(client_name, name_prompt_widget->input);
 	FreeWidget(name_prompt_widget, free_prompt);
 
-	info_t *chat_widget = GInfoWidget("Chat", CHAT_HEIGHT, CHAT_WIDTH, chat_cords.y, chat_cords.x, border_default);
-	prompt_t *input_prompt = GPromptWidget(NULL, 255, INPUT_CHAT_HEIGHT, INPUT_CHAT_WIDTH, input_cords.y+CHAT_HEIGHT/2+(INPUT_CHAT_HEIGHT/2+1), input_cords.x, border_type2);
+	info_t *chat_widget = GInfoWidget(
+			"Chat",
+			CHAT_HEIGHT,
+			CHAT_WIDTH,
+			chat_cords.y,
+			chat_cords.x,
+			border_default);
+
+	prompt_t *input_prompt = GPromptWidget(
+			NULL,
+			255,
+			INPUT_CHAT_HEIGHT,
+			INPUT_CHAT_WIDTH,
+			input_cords.y+CHAT_HEIGHT/2+(INPUT_CHAT_HEIGHT/2+1),
+			input_cords.x,
+			border_type2);
 
 	char SERVER_ANSWER[BUF_LEN];
-	int read_server;
-
 	wtimeout(input_prompt->w, 10);
 	for (;;) {
 		memset(SERVER_ANSWER, 0, sizeof(SERVER_ANSWER));
 		char fmt_message_name[BUF_LEN]; /* in this variable I will use sprintf(fmt_message_name, "%s: %s", ->input, name). Then it will be send to server. */
 		input_prompt->read(input_prompt);
 		if (!input_prompt->input) {
+			int read_server;
 			read_server = listen_server(client_socket, SERVER_ANSWER, BUF_LEN);
-
 			if (read_server > 0) {
+
 				char messages[MAX_MSGS_PER_REQUEST][BUF_LEN];
 				size_t lines = messages_count(SERVER_ANSWER, messages);
 
 				for (size_t i = 0; i < lines; i++) {
 					chat_widget->write(chat_widget, messages[i]);
+
 					char *tmp = format_message_history(messages[i]);
 					save_history(tmp);
 					free(tmp);
@@ -92,11 +128,9 @@ main(int argc, char **argv)
 			}
 			continue;
 		}
-
 		if (input_prompt->input) {
 			sprintf(fmt_message_name, "%s: %s", client_name, input_prompt->input);
 		}
-
 		write_server(client_socket, fmt_message_name);
 
 		if (input_prompt->input)
@@ -198,7 +232,7 @@ format_message_history(const char *msg)
 {
 	if (msg == NULL)
 		error_panic(stderr, "Source msg is NULL. Can't format\n");
-	char *dest = malloc(strlen(msg)+1);
+	char *dest = malloc(strlen(msg));
 	if (!dest)
 		error_panic(stderr, "Could not allocate memory for history buffer\n");
 	strcpy(dest, msg);

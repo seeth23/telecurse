@@ -29,7 +29,7 @@ listen_server(int fd, char *buffer, int buf_len)
 	fd_set readfd;
 	int max_d = fd;
 	int res;
-	int read_r;
+	int read_r = 0;
 
 	FD_ZERO(&readfd);
 
@@ -37,7 +37,7 @@ listen_server(int fd, char *buffer, int buf_len)
 
 	struct timeval timeout;
 	timeout.tv_sec = 0;
-	timeout.tv_usec = 2000;
+	timeout.tv_usec = 50000;
 
 	res = select(max_d+1, &readfd, NULL, NULL, &timeout);
 
@@ -61,6 +61,6 @@ int
 write_server(int fd, const char *str)
 {
 	int written;
-	written = write(fd, str, strlen(str));
+	written = write(fd, str, strlen(str)+1);
 	return written;
 }

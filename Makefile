@@ -5,35 +5,40 @@ H=$(O)/handlers
 M=$(O)/math
 N=$(O)/net
 
-SOURCES=$(O)/main.c\
-	$(O)/pc_error.c\
-	$(O)/tc_window.c\
-	$(O)/parse_conf.c\
-	$(O)/input.c\
-	$(O)/widget.c\
-	$(H)/input_handlers.c\
-	$(H)/menu_handlers.c\
-	$(M)/center.c\
-	$(O)/history.c\
-	$(O)/misc.c\
-	$(O)/client.c\
-	$(O)/args.c\
+SOURCES= \
+	$(O)/main.c \
+	$(O)/pc_error.c \
+	$(O)/tc_window.c \
+	$(O)/parse_conf.c \
+	$(O)/input.c \
+	$(O)/widget.c \
+	$(H)/input_handlers.c \
+	$(H)/menu_handlers.c \
+	$(M)/center.c \
+	$(O)/history.c \
+	$(O)/misc.c \
+	$(O)/client.c \
+	$(O)/args.c \
 
-SERVER_SOURCES=$(N)/error.c\
-	 $(N)/server.c\
+SERVER_SOURCES= \
+	$(N)/error.c \
+	$(N)/server.c \
 
 DEST=bins
 DEBUG_DEST=$(DEST)/debug
 
-FLAGS=-Wall\
-	-lpanel\
-	-lncurses\
-	-g\
+FLAGS= \
+	-Wall \
+	-lpanel \
+	-lncurses \
+	-g \
 
-DEBUG_FLAGS=-D DEBUG
+DEBUG_FLAGS= \
+	-D DEBUG \
 
-SERVER_FLAGS=-Wall\
-	-g\
+SERVER_FLAGS= \
+	-Wall \
+	-g \
 
 all: dest_dir telecurse tcserver
 
